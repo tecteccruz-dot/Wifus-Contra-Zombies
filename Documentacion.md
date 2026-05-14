@@ -25,7 +25,7 @@
 ```
 girls-vs-zombies/
 ├── index.html              — Estructura HTML y pantallas del juego
-├── style.css               — Estilos, tema oscuro rosa/púrpura, responsive
+├── style.css               — Estilos, tema oscuro azul eléctrico, responsive
 │
 ├── config.js               — Constantes, paleta, definiciones de chicas/zombis/oleadas
 ├── nucleo.js               — Estado global (ESTADO) y referencias al DOM
@@ -166,16 +166,16 @@ Toast de notificaciones. Se muestra con `mostrarFlotante(msg, color)` en `interf
 
 | Variable | Color | Uso |
 |----------|-------|-----|
-| `--pink` | `#ff4d8d` | Color principal (botones, bordes, títulos) |
-| `--pink2` | `#ff80b0` | Rosa secundario |
-| `--dark` | `#1a0a2e` | Fondo principal |
-| `--dark2` | `#2d1b4e` | Fondo de tarjetas/paneles |
+| `--pink` | `#00e5ff` | Azul eléctrico principal (botones, bordes, títulos) |
+| `--pink2` | `#66f6ff` | Azul eléctrico secundario |
+| `--dark` | `#06142f` | Fondo principal |
+| `--dark2` | `#0b1f45` | Fondo de tarjetas/paneles |
 | `--gold` | `#ffd700` | Oro / monedas |
 | `--green` | `#39e87a` | Verde (HP alto, victoria) |
 | `--red` | `#ff3355` | Rojo (HP bajo, derrota) |
 | `--blue` | `#4fc3f7` | Azul (Nexo) |
-| `--purple` | `#b388ff` | Púrpura (Cazadora) |
-| `--text` | `#f0e6ff` | Color de texto general |
+| `--purple` | `#7c4dff` | Violeta de acento |
+| `--text` | `#e6f7ff` | Color de texto general |
 | `--font-title` | `Georgia, serif` | Fuente para títulos |
 | `--font-body` | `Segoe UI, sans-serif` | Fuente para cuerpo |
 
@@ -184,7 +184,7 @@ Toast de notificaciones. Se muestra con `mostrarFlotante(msg, color)` en `interf
 | Clase | Efecto |
 |-------|--------|
 | `.screen.active` | Muestra una pantalla |
-| `.shop-card.selected` | Borde rosa + glow cuando una chica está seleccionada |
+| `.shop-card.selected` | Borde azul eléctrico + glow cuando una chica está seleccionada |
 | `.shop-card.disabled` | Opacidad reducida cuando no hay oro suficiente |
 | `.overlay-box.bad` | Borde rojo para Game Over |
 | `.overlay-box.good` | Borde verde para Victoria |
@@ -478,7 +478,7 @@ Cada oleada tiene dos fases:
 | `dibujarBarraVida(x, y, w, h, pct)` | Barra genérica: fondo oscuro + verde/amarilla/roja según % |
 | `dibujarProyectiles()` | Círculo pequeño con glow exterior |
 | `dibujarParticulas()` | Texto flotante o anillos AOE expansivos |
-| `dibujarGuiaColocacion()` | Tiñe celdas vacías con rosa semitransparente al tener chica seleccionada |
+| `dibujarGuiaColocacion()` | Tiñe celdas vacías con azul eléctrico semitransparente al tener chica seleccionada |
 
 ---
 

@@ -43,6 +43,8 @@
 - [x] Cambiar Cazadora a rafaga de 2 disparos rapidos con cooldown de 2s.
 - [x] Quitar dano expansivo de Cazadora para que solo golpee al objetivo disparado.
 - [x] Ampliar el alcance frontal de Pistolera a todo el tablero.
+- [x] Cambiar el tema visual principal de rosa a azul electrico en UI y canvas.
+- [x] Actualizar `Documentacion.md` con la nueva paleta azul electrico.
 
 ## Pendientes / mejoras futuras
 
@@ -56,3 +58,4 @@
 - [ ] Balancear el impacto de los misiles defensivos por carril en oleadas avanzadas.
 - [ ] Playtestear si 10 disparos de Pistolera por zombi comun se siente justo con las nuevas velocidades.
 - [ ] Considerar cambiar el `id` interno `shooter` a un nombre mas descriptivo si se hace una migracion mayor de datos.
+- [ ] Revisar contraste del tema azul electrico en celulares con brillo bajo.
