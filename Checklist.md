@@ -1,0 +1,58 @@
+# Checklist del Proyecto
+
+## Cambios recientes
+
+- [x] Renombrar la unidad `Tiktoker` a `Stremer`.
+- [x] Cambiar `Stremer` para que no ataque ni dispare proyectiles.
+- [x] Agregar produccion pasiva de oro para `Stremer`: `+15` cada `6s`.
+- [x] Actualizar la tienda para mostrar la funcion de oro de `Stremer`.
+- [x] Actualizar `Documentacion.md` con el nuevo comportamiento.
+- [x] Cambiar oleadas a dos fases: avanzada inicial lenta y gran oleada al alcanzar bajas.
+- [x] Agregar espera inicial de 5s antes del primer zombi de cada oleada.
+- [x] Evitar que la ronda termine antes de que ocurra y se derrote la gran oleada.
+- [x] Actualizar `Documentacion.md` con el nuevo formato de oleadas.
+- [x] Suavizar la primera oleada: carril fijo, menos zombis, delays mas largos y zombi basico mas lento.
+- [x] Integrar `Streamer.png` como icono real de tienda para Stremer.
+- [x] Integrar `Streamer_SS.png` como spritesheet 6x6 animado para Stremer en Canvas.
+- [x] Mantener emoji como fallback si el asset de Stremer aun no cargo.
+- [x] Aumentar la velocidad de animacion de Stremer de 8fps a 14fps.
+- [x] Renombrar `Arquera` a `Pistolera`.
+- [x] Integrar icono y spritesheets 6x6 de Pistolera para idle, apuntando y disparo.
+- [x] Agregar cambio de animacion de Pistolera segun objetivo y disparo.
+- [x] Agregar espera de 7.5s a la tarjeta de Stremer para evitar spam.
+- [x] Cambiar generacion pasiva de oro de Stremer a `+15` cada `24s`.
+- [x] Mostrar contador visual de espera en tarjetas bloqueadas por cooldown.
+- [x] Renombrar el juego visible a `Wifus contra Zombies`.
+- [x] Quitar recompensas de oro al matar zombis.
+- [x] Pausar la generacion de oro de Stremer cuando no hay oleada activa.
+- [x] Bloquear el despliegue de wifus si no hay oleada activa.
+- [x] Agregar herramienta `Recolocar wifu` con seleccion de origen y destino.
+- [x] Agregar herramienta `Quitar wifu` con reembolso del 10% del costo.
+- [x] Cambiar layout a tablero superior con panel inferior de cartas, herramientas y economia.
+- [x] Agregar misiles de defensa de un uso por carril al cruzar la linea azul.
+- [x] Reducir velocidades base de todos los zombis.
+- [x] Ajustar Pistolera a 1 de daño y zombi comun a 10 HP.
+- [x] Unificar espera inicial de zombis a 6s al iniciar cada oleada.
+- [x] Cambiar Stremer a +250 oro, primera entrega a 10s y luego cada 24s.
+- [x] Multiplicar por 10 el costo de todas las wifus excepto Stremer.
+- [x] Cambiar oro inicial a 500.
+- [x] Deseleccionar la carta de tienda despues de colocar una wifu.
+- [x] Integrar icono y spritesheet idle 6x6 de Tanque.
+- [x] Renombrar `Maga` visible a `Cazadora`.
+- [x] Integrar icono y spritesheets idle/apuntando/disparo 6x6 de Cazadora.
+- [x] Cambiar Cazadora a rafaga de 2 disparos rapidos con cooldown de 2s.
+- [x] Quitar dano expansivo de Cazadora para que solo golpee al objetivo disparado.
+- [x] Ampliar el alcance frontal de Pistolera a todo el tablero.
+
+## Pendientes / mejoras futuras
+
+- [ ] Ajustar balance de `Stremer` si el ritmo de oro resulta demasiado alto o bajo durante playtest.
+- [ ] Playtestear el ritmo de `surgeAtKills`, cantidades y delays de la gran oleada.
+- [ ] Revisar si las primeras 3 oleadas necesitan carriles menos aleatorios o mas tiempo entre spawns.
+- [ ] Playtestear escala y anclaje visual de Stremer en tablero con distintas resoluciones.
+- [ ] Playtestear transiciones visuales de Pistolera entre idle, apuntando y disparo.
+- [ ] Playtestear si 7.5s de espera y 24s de oro de Stremer dejan buen ritmo economico.
+- [ ] Playtestear encuadre del nuevo panel inferior en resoluciones pequeñas.
+- [ ] Balancear el impacto de los misiles defensivos por carril en oleadas avanzadas.
+- [ ] Playtestear si 10 disparos de Pistolera por zombi comun se siente justo con las nuevas velocidades.
+- [ ] Considerar cambiar el `id` interno `shooter` a un nombre mas descriptivo si se hace una migracion mayor de datos.

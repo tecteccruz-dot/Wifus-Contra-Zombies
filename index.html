@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Wifus contra Zombies 🌸</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- PANTALLA DE INICIO -->
+<div id="screen-start" class="screen active">
+  <div class="start-bg"></div>
+  <div class="start-content">
+    <div class="title-block">
+      <div class="title-emoji">🌸</div>
+      <h1 class="game-title">WIFUS<br><span>contra</span><br>ZOMBIES</h1>
+      <p class="subtitle">¡Defiende el nexo con tus chicas!</p>
+    </div>
+    <div class="start-buttons">
+      <button class="btn-main" id="btn-play">▶ JUGAR</button>
+      <button class="btn-secondary" id="btn-how">? Cómo Jugar</button>
+    </div>
+    <div class="credits">v1.0 · Hecho con 💖</div>
+  </div>
+</div>
+
+<!-- PANTALLA HOW TO PLAY -->
+<div id="screen-how" class="screen">
+  <div class="how-content">
+    <h2>¿Cómo Jugar?</h2>
+    <div class="how-grid">
+      <div class="how-card">
+        <span class="how-icon">🌸</span>
+        <h3>Selecciona una Chica</h3>
+        <p>Pulsa una tarjeta de la tienda para seleccionarla (se resalta en rosa).</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">🗺️</span>
+        <h3>Colócala en el mapa</h3>
+        <p>Toca/haz clic en una celda verde vacía del tablero para colocarla.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">🧟</span>
+        <h3>Defiende el Nexo</h3>
+        <p>Los zombis avanzan por filas. ¡Evita que lleguen al nexo (💎) al borde izquierdo!</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">💰</span>
+        <h3>Gana Oro</h3>
+        <p>Cada zombi eliminado da oro. Úsalo para comprar más defensoras.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">🌊</span>
+        <h3>Oleadas</h3>
+        <p>Cada oleada trae zombis más fuertes. ¡Sobrevive todas las oleadas para ganar!</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">💡</span>
+        <h3>Tip</h3>
+        <p>¡Mezcla tipos de chicas! La Arquera alcanza lejos, la Maga hace daño en área.</p>
+      </div>
+    </div>
+    <button class="btn-main" id="btn-back">← Volver</button>
+  </div>
+</div>
+
+<!-- PANTALLA DE JUEGO -->
+<div id="screen-game" class="screen">
+
+  <!-- HUD TOP -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-item" id="hud-wave">
+        <span class="hud-label">Oleada</span>
+        <span class="hud-val" id="wave-display">1</span>
+      </div>
+      <div class="hud-item" id="hud-nexo">
+        <span class="hud-label">Nexo</span>
+        <span class="hud-val" id="nexo-hp">100</span>
+      </div>
+    </div>
+    <div class="hud-center">
+      <span class="game-logo">Wifus contra Zombies</span>
+    </div>
+    <div class="hud-right">
+      <button id="btn-pause" title="Pausa">⏸</button>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div id="game-wrap">
+    <!-- TABLERO -->
+    <div id="board-container">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- PANEL INFERIOR -->
+    <div id="shop">
+      <div class="cards-panel">
+        <div id="shop-cards"></div>
+      </div>
+      <div class="tool-panel">
+        <button id="tool-move" class="tool-btn" type="button" title="Recolocar wifu">↔</button>
+        <button id="tool-remove" class="tool-btn" type="button" title="Quitar wifu">✖</button>
+      </div>
+      <div class="wave-info">
+        <div class="economy-box">
+          <span class="gold-icon">💰</span>
+          <span class="hud-val" id="gold-display">100</span>
+        </div>
+        <div class="shop-hint" id="shop-hint">Selecciona una chica</div>
+        <div id="wave-status">Prepárate...</div>
+        <button id="btn-start-wave" class="btn-wave">¡Enviar Oleada!</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PANTALLA PAUSA -->
+<div id="screen-pause" class="screen overlay-screen">
+  <div class="overlay-box">
+    <h2>⏸ Pausa</h2>
+    <button class="btn-main" id="btn-resume">▶ Continuar</button>
+    <button class="btn-secondary" id="btn-menu-from-pause">🏠 Menú</button>
+  </div>
+</div>
+
+<!-- PANTALLA GAME OVER -->
+<div id="screen-gameover" class="screen overlay-screen">
+  <div class="overlay-box bad">
+    <div class="over-emoji">🧟</div>
+    <h2>¡El Nexo Cayó!</h2>
+    <p id="go-wave-reached">Llegaste a la oleada <strong>1</strong></p>
+    <button class="btn-main" id="btn-retry">🔄 Reintentar</button>
+    <button class="btn-secondary" id="btn-menu-go">🏠 Menú</button>
+  </div>
+</div>
+
+<!-- PANTALLA VICTORIA -->
+<div id="screen-win" class="screen overlay-screen">
+  <div class="overlay-box good">
+    <div class="over-emoji">🏆</div>
+    <h2>¡Victoria!</h2>
+    <p>¡Sobreviviste todas las oleadas!</p>
+    <button class="btn-main" id="btn-play-again">🔄 Jugar de Nuevo</button>
+    <button class="btn-secondary" id="btn-menu-win">🏠 Menú</button>
+  </div>
+</div>
+
+<!-- MENSAJE FLOTANTE -->
+<div id="float-msg" class="float-msg hidden"></div>
+
+<!-- Módulos del juego — orden de carga importante -->
+<script src="config.js"></script>
+<script src="nucleo.js"></script>
+<script src="particulas.js"></script>
+<script src="interfaz.js"></script>
+<script src="tablero.js"></script>
+<script src="oleadas.js"></script>
+<script src="motor.js"></script>
+<script src="dibujo.js"></script>
+<script src="control.js"></script>
+</body>
+</html>
