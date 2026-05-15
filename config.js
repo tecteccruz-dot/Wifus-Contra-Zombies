@@ -8,7 +8,7 @@
 // ──────────────────────────────────────────────
 // DIMENSIONES DEL TABLERO
 // ──────────────────────────────────────────────
-const COLUMNAS     = 10;   // columnas del tablero: 12 + Nexo = 13 celdas visibles
+const COLUMNAS     = 11;   // columnas del tablero: 12 + Nexo = 13 celdas visibles
 const FILAS        = 6;    // filas del tablero
 const COL_NEXO     = 0;    // columna donde está el nexo (lado izquierdo)
 const COL_SPAWN    = COLUMNAS; // columna de aparición de zombis (fuera a la derecha)
