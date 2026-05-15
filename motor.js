@@ -206,21 +206,24 @@ function actualizarChicas(dt) {
       return;
     }
 
-    // Healer: curar a la aliada con menos vida en rango
+    // Doctora: cura solo a la aliada herida justo delante o detras.
     if (def.id === 'healer') {
       let mejor = null, mejorVida = Infinity;
       ESTADO.chicas.forEach(otra => {
         if (otra === g) return;
-        const dist = Math.abs(otra.col - g.col);
-        const filaOk = otra.fila === g.fila || Math.abs(otra.fila - g.fila) <= 1;
-        if (dist <= def.alcance && filaOk && otra.vida < otra.vidaMax) {
+        const mismaFila = otra.fila === g.fila;
+        const justoAlLado = Math.abs(otra.col - g.col) <= def.alcance;
+        if (mismaFila && justoAlLado && otra.vida < otra.vidaMax) {
           if (otra.vida < mejorVida) { mejorVida = otra.vida; mejor = otra; }
         }
       });
       if (mejor) {
-        mejor.vida = Math.min(mejor.vidaMax, mejor.vida + def.curacion);
-        crearParticula(centroX(mejor.col), centroY(mejor.fila), `+${def.curacion}❤️`, PALETA.verde);
+        const curacion = Math.max(1, Math.round(mejor.vidaMax * def.curacionPct));
+        mejor.vida = Math.min(mejor.vidaMax, mejor.vida + curacion);
+        crearParticula(centroX(mejor.col), centroY(mejor.fila), `+${curacion}❤️`, PALETA.verde);
         g.enfriamiento = 1 / def.cadencia;
+        g.disparoAnim = def.spriteEstados?.disparo?.duracion || 0.45;
+        g.animacion = 'disparo';
       }
       return;
     }
@@ -353,6 +356,7 @@ function verificarOleadaCompleta() {
   ESTADO.oleadaActiva   = false;
   ESTADO.oleadaCompleta = true;
   ESTADO.defOleadaActual = null;
+  guardarProgresoOleada(ESTADO.oleada);
 
   if (ESTADO.oleada >= TOTAL_OLEADAS) {
     setTimeout(() => mostrarVictoria(), 1200);

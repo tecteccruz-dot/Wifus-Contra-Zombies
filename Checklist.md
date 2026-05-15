@@ -45,6 +45,21 @@
 - [x] Ampliar el alcance frontal de Pistolera a todo el tablero.
 - [x] Cambiar el tema visual principal de rosa a azul electrico en UI y canvas.
 - [x] Actualizar `Documentacion.md` con la nueva paleta azul electrico.
+- [x] Redisenar el menu principal con tema azul electrico y botones Continuar/Iniciar, Niveles, Modos y Opciones.
+- [x] Agregar progreso local con `localStorage` para oleada desbloqueada, modo y opciones.
+- [x] Agregar pantalla de Niveles con oleadas bloqueadas/desbloqueadas.
+- [x] Agregar pantallas de Modos y Opciones con guardado local.
+- [x] Actualizar `Documentacion.md` con el nuevo menu y `guardado.js`.
+- [x] Renombrar `Healer` a `Doctora`.
+- [x] Cambiar Doctora a curacion del 10% de vida maxima cada 2s solo a unidades delante o detras en la misma fila.
+- [x] Reducir la vida de Doctora y agregar espera de tarjeta de 30s.
+- [x] Integrar icono y spritesheets idle/curar 6x6 de Doctora.
+- [x] Actualizar `Documentacion.md` con comportamiento y assets de Doctora.
+- [x] Usar `Icono/WifusContraZombies.png` como logo del menu principal.
+- [x] Agregar `Icono/WifusContraZombies.ico` como favicon del sitio.
+- [x] Actualizar `Documentacion.md` con los assets de marca.
+- [x] Corregir bug de seleccion de cartas de tienda que se activaban y desactivaban por doble disparo de click/tap.
+- [x] Mejorar visualmente el menu principal para acercarlo al estilo anime arcade zombie del logo.
 
 ## Pendientes / mejoras futuras
 
@@ -59,3 +74,6 @@
 - [ ] Playtestear si 10 disparos de Pistolera por zombi comun se siente justo con las nuevas velocidades.
 - [ ] Considerar cambiar el `id` interno `shooter` a un nombre mas descriptivo si se hace una migracion mayor de datos.
 - [ ] Revisar contraste del tema azul electrico en celulares con brillo bajo.
+- [ ] Convertir los modos `supervivencia` y `desafio` en reglas jugables reales.
+- [ ] Agregar guardado de partida exacta si se necesita continuar a mitad de oleada.
+- [ ] Playtestear si la espera de 30s y la curacion de Doctora evitan que Tanque sea demasiado dominante.

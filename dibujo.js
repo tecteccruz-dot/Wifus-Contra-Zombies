@@ -287,7 +287,7 @@ function dibujarGuiaColocacion() {
   for (let fila = 0; fila < FILAS; fila++) {
     for (let col = 1; col < COLUMNAS; col++) {
       if (!ESTADO.chicas.some(g => g.col === col && g.fila === fila)) {
-        ctx.fillStyle = 'rgba(255,77,141,0.10)';
+        ctx.fillStyle = 'rgba(0,229,255,0.10)';
         ctx.fillRect(celdaX(col) + 1, celdaY(fila) + 1, ESTADO.anchoCelda - 2, ESTADO.altoCelda - 2);
       }
     }

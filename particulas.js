@@ -9,6 +9,7 @@
 // PARTÍCULA DE TEXTO FLOTANTE
 // ──────────────────────────────────────────────
 function crearParticula(x, y, texto, color, flotarArriba = false) {
+  if (typeof obtenerProgreso === 'function' && !obtenerProgreso().opciones.efectos) return;
   ESTADO.particulas.push({
     x, y, texto, color,
     vx: (Math.random() - 0.5) * 20,
@@ -24,6 +25,7 @@ function crearParticula(x, y, texto, color, flotarArriba = false) {
 // PARTÍCULA DE ANILLO (EXPLOSIÓN AOE)
 // ──────────────────────────────────────────────
 function crearParticulaCirculo(x, y, radio, color) {
+  if (typeof obtenerProgreso === 'function' && !obtenerProgreso().opciones.efectos) return;
   ESTADO.particulas.push({
     x, y, texto: null, color,
     vx: 0, vy: 0,

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Wifus contra Zombies 🌸</title>
+  <link rel="icon" href="Icono/WifusContraZombies.ico" type="image/x-icon">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,17 +12,102 @@
 <!-- PANTALLA DE INICIO -->
 <div id="screen-start" class="screen active">
   <div class="start-bg"></div>
+  <div class="start-grid"></div>
   <div class="start-content">
     <div class="title-block">
-      <div class="title-emoji">🌸</div>
-      <h1 class="game-title">WIFUS<br><span>contra</span><br>ZOMBIES</h1>
-      <p class="subtitle">¡Defiende el nexo con tus chicas!</p>
+      <img class="game-title-logo" src="Icono/WifusContraZombies.png" alt="Wifus contra Zombies">
+      <p class="subtitle">Defiende el nexo bajo una tormenta neon</p>
     </div>
-    <div class="start-buttons">
-      <button class="btn-main" id="btn-play">▶ JUGAR</button>
-      <button class="btn-secondary" id="btn-how">? Cómo Jugar</button>
+    <div class="menu-panel">
+      <button class="menu-btn menu-btn-primary" id="btn-play">
+        <span class="menu-btn-icon">▶</span>
+        <span id="btn-play-label">Iniciar</span>
+      </button>
+      <button class="menu-btn" id="btn-levels">
+        <span class="menu-btn-icon">▦</span>
+        <span>Niveles</span>
+      </button>
+      <button class="menu-btn" id="btn-modes">
+        <span class="menu-btn-icon">◇</span>
+        <span>Modos</span>
+      </button>
+      <button class="menu-btn" id="btn-options">
+        <span class="menu-btn-icon">⚙</span>
+        <span>Opciones</span>
+      </button>
+      <button class="menu-btn menu-btn-quiet" id="btn-how">
+        <span class="menu-btn-icon">?</span>
+        <span>Como jugar</span>
+      </button>
     </div>
-    <div class="credits">v1.0 · Hecho con 💖</div>
+    <div class="menu-status" id="menu-status">Progreso local listo</div>
+    <div class="credits">v1.0 · Tema azul electrico</div>
+  </div>
+</div>
+
+<!-- PANTALLA NIVELES -->
+<div id="screen-levels" class="screen menu-screen">
+  <div class="menu-surface">
+    <div class="menu-surface-head">
+      <span class="surface-kicker">Seleccion de oleada</span>
+      <h2>Niveles</h2>
+      <p>El progreso se guarda en este navegador.</p>
+    </div>
+    <div class="level-grid" id="level-grid"></div>
+    <button class="btn-main" id="btn-back-levels">← Volver</button>
+  </div>
+</div>
+
+<!-- PANTALLA MODOS -->
+<div id="screen-modes" class="screen menu-screen">
+  <div class="menu-surface">
+    <div class="menu-surface-head">
+      <span class="surface-kicker">Configuracion de partida</span>
+      <h2>Modos</h2>
+      <p>Por ahora cambia el modo guardado para futuras partidas.</p>
+    </div>
+    <div class="mode-list">
+      <button class="choice-row" data-mode="historia">
+        <strong>Historia</strong>
+        <span>Oleadas progresivas clasicas</span>
+      </button>
+      <button class="choice-row" data-mode="supervivencia">
+        <strong>Supervivencia</strong>
+        <span>Preparado para oleadas infinitas</span>
+      </button>
+      <button class="choice-row" data-mode="desafio">
+        <strong>Desafio</strong>
+        <span>Preparado para reglas especiales</span>
+      </button>
+    </div>
+    <button class="btn-main" id="btn-back-modes">← Volver</button>
+  </div>
+</div>
+
+<!-- PANTALLA OPCIONES -->
+<div id="screen-options" class="screen menu-screen">
+  <div class="menu-surface">
+    <div class="menu-surface-head">
+      <span class="surface-kicker">Preferencias locales</span>
+      <h2>Opciones</h2>
+      <p>Se guardan con localStorage y funcionan en GitHub Pages.</p>
+    </div>
+    <label class="option-row">
+      <span>
+        <strong>Efectos visuales</strong>
+        <small>Particulas, brillos y avisos flotantes</small>
+      </span>
+      <input type="checkbox" id="opt-effects">
+    </label>
+    <label class="option-row">
+      <span>
+        <strong>Movimiento de menu</strong>
+        <small>Animaciones decorativas del menu principal</small>
+      </span>
+      <input type="checkbox" id="opt-motion">
+    </label>
+    <button class="btn-secondary" id="btn-reset-progress">Reiniciar progreso</button>
+    <button class="btn-main" id="btn-back-options">← Volver</button>
   </div>
 </div>
 
@@ -33,7 +119,7 @@
       <div class="how-card">
         <span class="how-icon">🌸</span>
         <h3>Selecciona una Chica</h3>
-        <p>Pulsa una tarjeta de la tienda para seleccionarla (se resalta en rosa).</p>
+        <p>Pulsa una tarjeta de la tienda para seleccionarla (se resalta en azul electrico).</p>
       </div>
       <div class="how-card">
         <span class="how-icon">🗺️</span>
@@ -48,7 +134,7 @@
       <div class="how-card">
         <span class="how-icon">💰</span>
         <h3>Gana Oro</h3>
-        <p>Cada zombi eliminado da oro. Úsalo para comprar más defensoras.</p>
+        <p>Stremer genera oro durante las oleadas. Usalo para comprar mas defensoras.</p>
       </div>
       <div class="how-card">
         <span class="how-icon">🌊</span>
@@ -58,7 +144,7 @@
       <div class="how-card">
         <span class="how-icon">💡</span>
         <h3>Tip</h3>
-        <p>¡Mezcla tipos de chicas! La Arquera alcanza lejos, la Maga hace daño en área.</p>
+        <p>Mezcla tipos de chicas: Pistolera cubre carriles, Cazadora remata y Tanque aguanta.</p>
       </div>
     </div>
     <button class="btn-main" id="btn-back">← Volver</button>
@@ -161,6 +247,7 @@
 <script src="oleadas.js"></script>
 <script src="motor.js"></script>
 <script src="dibujo.js"></script>
+<script src="guardado.js"></script>
 <script src="control.js"></script>
 </body>
 </html>

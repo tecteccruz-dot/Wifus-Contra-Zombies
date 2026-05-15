@@ -15,7 +15,7 @@
 | **Responsive** | Sí — funciona en PC (click) y móvil (touch), landscape y portrait |
 | **Idioma** | Español (código y nombres) |
 | **Oleadas** | 10 oleadas progresivas con 5 tipos de zombis |
-| **Torres** | 6 chicas (Stremer, Pistolera, Cazadora, Tanque, Healer, Bomber) |
+| **Torres** | 6 chicas (Stremer, Pistolera, Cazadora, Tanque, Doctora, Bomber) |
 | **Requisitos** | Solo un navegador moderno. No necesita servidor local. |
 
 ---
@@ -35,12 +35,16 @@ girls-vs-zombies/
 ├── oleadas.js              — Inicio de oleada, spawn, surge
 ├── motor.js                — Game loop y lógica de actualización
 ├── dibujo.js               — Renderizado completo del canvas
+├── guardado.js             — Progreso local y opciones con localStorage
 ├── control.js              — Inicio/fin del juego, eventos de botones, init
 │
 ├── game.js                 — ⚠️ Archivo original (ya no se usa, quedó como respaldo)
 ├── Documentacion.md        — Este archivo
 ├── Checklist.md            — Estado de cambios, pendientes y mejoras futuras
 ├── workspace.code-workspace — Configuración de VS Code
+├── Icono/                  — Logo y favicon del juego
+│   ├── WifusContraZombies.png
+│   └── WifusContraZombies.ico
 └── Personajes/             — Sprites de personajes
     └── Cazadora/
         ├── Cazadora.png
@@ -58,6 +62,10 @@ girls-vs-zombies/
     └── Tanque/
         ├── Tanque.png
         └── Tanque_Idle.png
+    └── Doctora/
+        ├── Doctora.png
+        ├── Doctora_Idle.png
+        └── Doctora_Curar.png
 ```
 
 **No hay** `package.json`, ni `node_modules`, ni build tool. Todo es vanilla.
@@ -77,7 +85,8 @@ tablero.js     → Usa ESTADO + interfaz.js (mostrarFlotante, renderizarTienda, 
 oleadas.js     → Usa config.js + nucleo.js + tablero.js (celdaX) + interfaz.js
 motor.js       → Usa nucleo.js + oleadas.js + particulas.js + interfaz.js + tablero.js (centroX, centroY)
 dibujo.js      → Usa nucleo.js + tablero.js (celdaX, celdaY, centroX, centroY)
-control.js     → Usa todo lo anterior — cablea botones e inicia la app
+guardado.js    → Usa config.js (TOTAL_OLEADAS) y localStorage del navegador
+control.js     → Usa todo lo anterior — cablea botones, progreso local e inicia la app
 ```
 
 ---
@@ -92,11 +101,28 @@ El juego usa un sistema de pantallas (screens) controlado por la clase CSS `.act
 
 | Elemento | `id` | Propósito |
 |----------|------|-----------|
-| Título animado | `.game-title` | Título "WIFUS contra ZOMBIES" con gradiente CSS |
-| Emoji giratorio | `.title-emoji` | 🌸 con animación `spin` (CSS keyframes) |
-| Botón Jugar | `#btn-play` | Llama a `iniciarJuego()` en `control.js` |
+| Logo principal | `.game-title-logo` | Imagen `Icono/WifusContraZombies.png` |
+| Botón Continuar/Iniciar | `#btn-play` | Inicia desde la oleada desbloqueada guardada en localStorage |
+| Botón Niveles | `#btn-levels` | Abre `#screen-levels` con oleadas desbloqueadas/bloqueadas |
+| Botón Modos | `#btn-modes` | Abre `#screen-modes` y guarda el modo elegido |
+| Botón Opciones | `#btn-options` | Abre `#screen-options` y guarda preferencias locales |
 | Botón Cómo Jugar | `#btn-how` | Llama a `mostrarPantalla('screen-how')` |
-| Créditos | `.credits` | Texto "v1.0 · Hecho con 💖" |
+| Estado local | `#menu-status` | Muestra oleada desbloqueada y modo actual |
+| Créditos | `.credits` | Texto de versión/tema |
+
+El favicon se declara en `index.html` con `Icono/WifusContraZombies.ico`.
+
+### 4.2.1. Pantalla Niveles (`#screen-levels`)
+
+`#level-grid` se rellena desde `control.js → renderizarNiveles()`. Usa `guardado.js` para leer `oleadaDesbloqueada`; las oleadas bloqueadas quedan deshabilitadas y las disponibles pueden iniciar partida desde ese número de oleada.
+
+### 4.2.2. Pantalla Modos (`#screen-modes`)
+
+Lista modos preparados (`historia`, `supervivencia`, `desafio`). Actualmente guardan la elección local para futuras reglas de partida; el gameplay activo sigue usando el flujo clásico de oleadas.
+
+### 4.2.3. Pantalla Opciones (`#screen-options`)
+
+Guarda preferencias locales con `localStorage`: efectos visuales y movimiento de menú. Incluye botón para reiniciar progreso local.
 
 ### 4.3. Pantalla Cómo Jugar (`#screen-how`)
 
@@ -239,7 +265,7 @@ Toast de notificaciones. Se muestra con `mostrarFlotante(msg, color)` en `interf
 | `rafagaDisparos` | number | (Solo Cazadora) Disparos rápidos antes de entrar en cooldown |
 | `intervaloRafaga` | number | (Solo Cazadora) Segundos entre disparos rápidos de la ráfaga |
 | `cooldownRafaga` | number | (Solo Cazadora) Segundos de enfriamiento tras completar la ráfaga |
-| `curacion` | number | (Solo Healer) HP curado por tick |
+| `curacionPct` | number | (Solo Doctora) Porcentaje de vida máxima curado por tick |
 | `color` | string | Color del aura/glow |
 | `desc` | string | Texto de stats en la tienda |
 
@@ -251,7 +277,7 @@ Toast de notificaciones. Se muestra con `mostrarFlotante(msg, color)` en `interf
 | `archer` | 🏹 | Pistolera | 750 | 60 | 1 | Todo el frente | 0.8/s | 0 | Sprites idle/apuntando/disparo; solo dispara hacia adelante |
 | `mage` | 🔮 | Cazadora | 1000 | 55 | 30 | 3 | ráfaga x2 + 2s CD | 0 | Icono/sprites por estado; dispara 2 veces rápido a un solo objetivo |
 | `tank` | 🛡️ | Tanque | 900 | 300 | 8 | 1.5 | 1.5/s | 0 | Icono y spritesheet idle 6×6 |
-| `healer` | 💊 | Healer | 800 | 70 | 0 | 2.5 | 0.4/s | 0 | Cura +10 HP |
+| `healer` | 💊 | Doctora | 800 | 35 | 0 | 1 | 0.5/s | 0 | Cura 10% de vida máxima cada 2s a una unidad herida justo delante o detrás; espera de tarjeta 30s; icono y sprites idle/curar 6×6 |
 | `bomber` | 💣 | Bomber | 1200 | 65 | 50 | 2 | 0.35/s | 1.5 | AOE grande |
 
 **Estructura de cada zombi en `TIPOS_ZOMBI`:**
@@ -403,7 +429,7 @@ Cada oleada tiene dos fases:
 | `mostrarFlotante(mensaje, color)` | Texto, color borde | Muestra toast temporal (1.8s) |
 | `actualizarHUD()` | — | Refresca oro, vida nexo y oleada en el HUD |
 | `actualizarHerramientas()` | — | Refresca estado visual de botones de herramientas |
-| `renderizarTienda()` | — | Reconstruye cartas de la tienda desde `DEF_CHICAS`; muestra bloqueo por oro o espera |
+| `renderizarTienda()` | — | Reconstruye cartas de la tienda desde `DEF_CHICAS`; muestra bloqueo por oro o espera; las cartas usan `pointerup` con guardia anti-doble disparo |
 | `seleccionarChica(id)` | ID de chica | Selecciona/deselecciona chica; valida oro y espera de tarjeta |
 | `seleccionarHerramienta(herramienta)` | ID de herramienta | Alterna los modos `recolocar` y `quitar`, cancelando selección de chica |
 
@@ -454,7 +480,7 @@ Cada oleada tiene dos fases:
 | `actualizarMisilesDefensa(dt)` | Avanza y limpia animaciones de misiles defensivos |
 | `actualizarColaSpawn(dt)` | Procesa la cola: spawnea zombis al cumplir su retraso |
 | `actualizarZombis(dt)` | **Lógica zombi:** aura de cura, ataque melee a chicas, avance al nexo, disparo de misil por carril, daño al nexo, muerte y conteo de bajas para activar surge |
-| `actualizarChicas(dt)` | **Lógica chicas:** Stremer genera oro solo con oleada activa. Healer busca aliada herida y cura. Cazadora dispara ráfaga de 2 tiros rápidos y luego entra en cooldown de 2s. Las demás buscan zombi más cercano en su fila y disparan. |
+| `actualizarChicas(dt)` | **Lógica chicas:** Stremer genera oro solo con oleada activa. Doctora cura a una aliada herida justo delante o detrás en la misma fila. Cazadora dispara ráfaga de 2 tiros rápidos y luego entra en cooldown de 2s. Las demás buscan zombi más cercano en su fila y disparan. |
 | `dispararProyectil(g, objetivo, desdeX, desdeY)` | Crea proyectil hacia el zombi objetivo |
 | `dispararMisilDefensa(fila)` | Consume el misil de una fila, elimina zombis de ese carril y cuenta bajas |
 | `actualizarProyectiles(dt)` | **Lógica proyectiles:** movimiento con homing, impacto single-target o AOE |
@@ -488,13 +514,22 @@ Cada oleada tiene dos fases:
 |---------|----------|
 | `juegoPerdido()` | Pausa, muestra oleada alcanzada, va a Game Over |
 | `mostrarVictoria()` | Pausa, va a pantalla de victoria |
-| `iniciarJuego()` | Reinicia estado, renderiza tienda, redimensiona canvas, inicia bucle |
+| `iniciarJuego(oleadaInicial)` | Reinicia estado desde una oleada inicial, renderiza tienda, redimensiona canvas, inicia bucle |
+| `actualizarMenuPrincipal()` | Refresca etiqueta Continuar/Iniciar, estado local y animación de menú |
+| `mostrarMenuPrincipal()` | Vuelve al menú y actualiza progreso visible |
+| `renderizarNiveles()` | Crea botones de oleada según progreso desbloqueado |
+| `mostrarNiveles()` | Abre la pantalla de niveles |
+| `mostrarModos()` | Abre la pantalla de modos y marca el modo activo |
+| `mostrarOpciones()` | Abre la pantalla de opciones y sincroniza checkboxes |
 
 **Eventos de botones registrados:**
 
 | Botón | Acción |
 |-------|--------|
 | `#btn-play` | `iniciarJuego()` |
+| `#btn-levels` | Abre Niveles |
+| `#btn-modes` | Abre Modos |
+| `#btn-options` | Abre Opciones |
 | `#btn-how` | `mostrarPantalla('screen-how')` |
 | `#btn-back` | `mostrarPantalla('screen-start')` |
 | `#btn-start-wave` | `iniciarOleada()` |
@@ -509,6 +544,19 @@ Cada oleada tiene dos fases:
 | `#btn-menu-win` | `mostrarPantalla('screen-start')` |
 
 **Inicialización:** Al cargar `control.js`, se ejecuta `mostrarPantalla('screen-start')` para mostrar la pantalla de inicio.
+
+### 6.10. guardado.js — Progreso Local
+
+Usa `localStorage` con la clave `wifusContraZombies.progreso.v1`. No requiere backend, por lo que funciona en GitHub Pages y Firebase Hosting. El progreso queda vinculado al navegador y dominio del jugador.
+
+| Función | Qué hace |
+|---------|----------|
+| `obtenerProgreso()` | Lee y normaliza progreso local |
+| `guardarProgreso(progreso)` | Persiste progreso normalizado |
+| `guardarProgresoOleada(oleadaCompletada)` | Desbloquea la siguiente oleada al completar una |
+| `guardarModoJuego(modo)` | Guarda el modo elegido |
+| `guardarOpcionJuego(nombre, valor)` | Guarda preferencias locales |
+| `reiniciarProgresoLocal()` | Borra progreso y vuelve a valores base |
 
 ---
 
@@ -629,6 +677,11 @@ Tanque usa assets reales:
 - `Personajes/Tanque/Tanque.png` como icono de tienda.
 - `Personajes/Tanque/Tanque_Idle.png` como spritesheet idle 6×6.
 
+Doctora usa assets reales:
+- `Personajes/Doctora/Doctora.png` como icono de tienda.
+- `Personajes/Doctora/Doctora_Idle.png` como idle 6×6.
+- `Personajes/Doctora/Doctora_Curar.png` como animación de curación 6×6.
+
 Para agregar sprites a otra chica:
 1. `config.js` → agregar `icono`, `sprite` o `spriteEstados` a su definición en `DEF_CHICAS`.
 2. `interfaz.js` → `renderizarVisualTienda()` ya usa `<img>` si existe `icono`.
@@ -649,7 +702,7 @@ No hay sistema de audio. Habría que agregar objetos `Audio` y reproducir en los
 - **Delta time:** `dt` en segundos para movimiento independiente del framerate. Limitado a 0.1s para evitar saltos.
 - **Pausa:** Solo detiene `actualizar()`, no `dibujar()`. El canvas sigue renderizando el último estado.
 - **Touch y click:** Ambos llaman a `manejarClickLienzo()`. Touch usa `preventDefault()`. Las wifus solo pueden desplegarse durante una oleada activa. Si hay herramienta activa, el clic se usa para recolocar o quitar en vez de desplegar.
-- **Healer:** Busca aliadas con `vida < vidaMax` en misma fila o adyacentes. Cura a la de menor vida.
+- **Doctora:** Tiene poca vida (`35`). Busca aliadas con `vida < vidaMax` solo en la misma fila, justo delante o detrás a máximo 1 casilla. No cura diagonales, arriba, abajo ni objetivos más lejanos. Cura 10% de la vida máxima del objetivo cada 2s y su tarjeta queda en espera 30s tras colocarla.
 - **Pistolera:** Tiene alcance frontal completo (`COLUMNAS`) y solo busca zombis delante de ella en su misma fila.
 - **Cazadora:** Usa `rafagaDisparos`, `intervaloRafaga` y `cooldownRafaga`: dispara 2 veces rápido a un solo objetivo y luego espera 2s antes de volver a disparar.
 - **Stremer:** No ataca. Genera `oroIngreso` solo si `oleadaActiva` es true. La primera entrega ocurre tras `primerIntervaloOro`; las siguientes, cada `intervaloOro`. Su tarjeta queda bloqueada por `tiempoEspera` segundos tras colocarla.

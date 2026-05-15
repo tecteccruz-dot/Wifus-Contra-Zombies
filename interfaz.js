@@ -17,7 +17,7 @@ function mostrarPantalla(id) {
 // MENSAJES FLOTANTES (TOAST)
 // ──────────────────────────────────────────────
 let temporizadorFlotante = null;
-function mostrarFlotante(mensaje, color = '#ff4d8d') {
+function mostrarFlotante(mensaje, color = '#00e5ff') {
   elFlotante.textContent = mensaje;
   elFlotante.style.borderColor = color;
   elFlotante.style.color = '#fff';
@@ -61,9 +61,26 @@ function renderizarTienda() {
       <div class="card-cost">💰${def.costo}</div>
       <div class="card-stats">${def.desc}</div>
       ${espera > 0 ? `<div class="card-cooldown">⏳ ${formatearEsperaTienda(espera)}</div>` : ''}`;
-    div.addEventListener('click', () => seleccionarChica(def.id));
+    div.addEventListener('pointerup', evento => manejarPointerCartaTienda(evento, def.id));
     tarjetasTienda.appendChild(div);
   });
+}
+
+let ultimaCartaSeleccionada = { id: null, tiempo: 0 };
+
+function manejarPointerCartaTienda(evento, id) {
+  evento.preventDefault();
+  evento.stopPropagation();
+
+  const ahora = performance.now();
+  const esDuplicadoRapido =
+    ultimaCartaSeleccionada.id === id &&
+    ahora - ultimaCartaSeleccionada.tiempo < 250;
+
+  ultimaCartaSeleccionada = { id, tiempo: ahora };
+  if (esDuplicadoRapido) return;
+
+  seleccionarChica(id);
 }
 
 function obtenerEsperaTienda(id) {
@@ -77,7 +94,9 @@ function formatearEsperaTienda(segundos) {
 }
 
 function renderizarVisualTienda(def) {
-  if (def.icono) return `<img class="card-icon" src="${def.icono}" alt="${def.nombre}">`;
+  if (def.icono) {
+    return `<img class="card-icon" src="${def.icono}" alt="${def.nombre}" onerror="this.replaceWith(document.createTextNode('${def.emoji}'))">`;
+  }
   return def.emoji;
 }
 
