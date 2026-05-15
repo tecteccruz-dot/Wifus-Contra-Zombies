@@ -49,7 +49,7 @@
 <div id="screen-levels" class="screen menu-screen">
   <div class="menu-surface">
     <div class="menu-surface-head">
-      <span class="surface-kicker">Seleccion de oleada</span>
+      <span class="surface-kicker">Seleccion de nivel</span>
       <h2>Niveles</h2>
       <p>El progreso se guarda en este navegador.</p>
     </div>
@@ -69,7 +69,7 @@
     <div class="mode-list">
       <button class="choice-row" data-mode="historia">
         <strong>Historia</strong>
-        <span>Oleadas progresivas clasicas</span>
+        <span>Niveles con ataques, oleadas y recompensas</span>
       </button>
       <button class="choice-row" data-mode="supervivencia">
         <strong>Supervivencia</strong>
@@ -158,7 +158,7 @@
   <div id="hud">
     <div class="hud-left">
       <div class="hud-item" id="hud-wave">
-        <span class="hud-label">Oleada</span>
+        <span class="hud-label">Nivel</span>
         <span class="hud-val" id="wave-display">1</span>
       </div>
       <div class="hud-item" id="hud-nexo">
@@ -167,7 +167,7 @@
       </div>
     </div>
     <div class="hud-center">
-      <span class="game-logo">Wifus contra Zombies</span>
+      <div class="level-progress" id="level-progress" aria-label="Progreso del nivel"></div>
     </div>
     <div class="hud-right">
       <button id="btn-pause" title="Pausa">⏸</button>
@@ -179,6 +179,19 @@
     <!-- TABLERO -->
     <div id="board-container">
       <canvas id="game-canvas"></canvas>
+      <div id="danger-alert" class="danger-alert hidden">
+        <span class="danger-alert-kicker">PELIGRO</span>
+        <strong id="danger-alert-text">OLEADA DE ZOMBIS</strong>
+      </div>
+      <div id="captain-dialog" class="captain-dialog hidden">
+        <div class="captain-portrait">
+          <img src="Personajes/Capitana/Capitana.png" alt="Capitana">
+        </div>
+        <div class="captain-text">
+          <strong>Capitana</strong>
+          <p id="captain-message"></p>
+        </div>
+      </div>
     </div>
 
     <!-- PANEL INFERIOR -->
@@ -197,11 +210,36 @@
         </div>
         <div class="shop-hint" id="shop-hint">Selecciona una chica</div>
         <div id="wave-status">Prepárate...</div>
-        <button id="btn-start-wave" class="btn-wave">¡Enviar Oleada!</button>
+        <button id="btn-start-wave" class="btn-wave" hidden>Iniciar ataque</button>
       </div>
     </div>
   </div>
 
+</div>
+
+<!-- PANTALLA PREVIA DE NIVEL -->
+<div id="screen-level-briefing" class="screen menu-screen">
+  <div class="menu-surface level-briefing-surface">
+    <div class="menu-surface-head">
+      <span class="surface-kicker" id="briefing-kicker">Nivel 1</span>
+      <h2 id="briefing-title">Amenaza detectada</h2>
+      <p id="briefing-summary">Revisa los zombis que aparecerán antes de iniciar.</p>
+    </div>
+    <div class="briefing-layout">
+      <div class="briefing-panel">
+        <strong>Carriles activos</strong>
+        <div id="briefing-lanes" class="briefing-lanes"></div>
+      </div>
+      <div class="briefing-panel">
+        <strong>Zombis del nivel</strong>
+        <div id="briefing-zombies" class="briefing-zombies"></div>
+      </div>
+    </div>
+    <div class="collection-actions">
+      <button class="btn-secondary" id="btn-briefing-exit">Salir</button>
+      <button class="btn-main" id="btn-briefing-start">Iniciar</button>
+    </div>
+  </div>
 </div>
 
 <!-- PANTALLA PAUSA -->
@@ -235,11 +273,41 @@
   </div>
 </div>
 
+<!-- PANTALLA COLECCION / RECOMPENSA -->
+<div id="screen-collection" class="screen menu-screen">
+  <div class="menu-surface collection-surface">
+    <div class="menu-surface-head">
+      <span class="surface-kicker" id="collection-kicker">Carta nueva</span>
+      <h2>Unidades</h2>
+      <p id="collection-summary">Estas son tus cartas disponibles.</p>
+    </div>
+    <div class="collection-grid" id="collection-grid"></div>
+    <div class="collection-detail" id="collection-detail">
+      Selecciona una carta para ver sus datos.
+    </div>
+    <div class="collection-actions">
+      <button class="btn-secondary" id="btn-collection-menu">Menú</button>
+      <button class="btn-main" id="btn-next-level">Siguiente nivel</button>
+    </div>
+  </div>
+</div>
+
 <!-- MENSAJE FLOTANTE -->
 <div id="float-msg" class="float-msg hidden"></div>
 
+<!-- RECOMPENSA CINEMATICA -->
+<div id="reward-cinematic" class="reward-cinematic hidden">
+  <div class="reward-big-card" id="reward-big-card"></div>
+</div>
+
+<!-- ENTRADA CINEMATICA -->
+<div id="level-fade" class="level-fade hidden"></div>
+
 <!-- Módulos del juego — orden de carga importante -->
 <script src="config.js"></script>
+<script src="chicas.js"></script>
+<script src="zombis.js"></script>
+<script src="niveles.js"></script>
 <script src="nucleo.js"></script>
 <script src="particulas.js"></script>
 <script src="interfaz.js"></script>

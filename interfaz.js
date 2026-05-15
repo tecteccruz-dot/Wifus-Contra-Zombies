@@ -26,16 +26,83 @@ function mostrarFlotante(mensaje, color = '#00e5ff') {
   temporizadorFlotante = setTimeout(() => elFlotante.classList.add('hidden'), 1800);
 }
 
+let temporizadorAlertaPeligro = null;
+function mostrarAlertaPeligro(mensaje = 'OLEADA DE ZOMBIS') {
+  if (!alertaPeligro || !textoAlertaPeligro) return;
+
+  textoAlertaPeligro.textContent = mensaje;
+  alertaPeligro.classList.remove('hidden', 'danger-alert-show');
+  alertaPeligro.offsetHeight;
+  alertaPeligro.classList.add('danger-alert-show');
+  document.body.classList.add('danger-screen-pulse');
+
+  clearTimeout(temporizadorAlertaPeligro);
+  temporizadorAlertaPeligro = setTimeout(() => {
+    alertaPeligro.classList.add('hidden');
+    alertaPeligro.classList.remove('danger-alert-show');
+    document.body.classList.remove('danger-screen-pulse');
+  }, 2600);
+}
+
 // ──────────────────────────────────────────────
 // ACTUALIZAR HUD
 // ──────────────────────────────────────────────
 function actualizarHUD() {
   elOro.textContent       = Math.floor(ESTADO.oro);
   elVidaNexo.textContent  = Math.max(0, ESTADO.vidaNexo);
-  elOleada.textContent    = `${ESTADO.oleada}/${TOTAL_OLEADAS}`;
+  elOleada.textContent    = ESTADO.faseActual
+    ? `${ESTADO.nivel}-${ESTADO.faseIndice + 1}`
+    : `${ESTADO.nivel}/${TOTAL_NIVELES}`;
+  renderizarProgresoNivel();
+}
+
+function renderizarProgresoNivel() {
+  if (!barraProgresoNivel) return;
+
+  const fases = ESTADO.nivelActual?.fases || [];
+  const totalZombis = Math.max(1, ESTADO.zombisTotalesNivel || contarZombisNivel(ESTADO.nivelActual || { fases: [] }));
+  const progreso = ESTADO.nivelCompleto
+    ? 1
+    : Math.min(1, (ESTADO.bajasNivel || 0) / totalZombis);
+
+  barraProgresoNivel.innerHTML = `
+    <div class="progress-zombie">🧟</div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width:${Math.round(progreso * 100)}%"></div>
+      ${renderizarMarcadoresNivel(fases, totalZombis)}
+    </div>`;
+}
+
+function renderizarMarcadoresNivel(fases, totalZombis) {
+  let acumulado = 0;
+  return fases.map((fase, indice) => {
+    acumulado += contarZombisFase(fase);
+    return renderizarMarcadorFase(fase, indice, acumulado, totalZombis);
+  }).join('');
+}
+
+function contarZombisFase(fase) {
+  return fase.grupos.reduce((total, grupo) => total + grupo.count, 0);
+}
+
+function renderizarMarcadorFase(fase, indice, acumulado, totalZombis) {
+  const left = totalZombis <= 0 ? 100 : (acumulado / totalZombis) * 100;
+  const clase = [
+    'progress-marker',
+    fase.tipo === 'oleada' ? 'wave' : 'attack',
+    (ESTADO.bajasNivel || 0) >= acumulado || ESTADO.nivelCompleto ? 'done' : '',
+    indice === ESTADO.faseIndice && ESTADO.faseActiva ? 'current' : '',
+  ].filter(Boolean).join(' ');
+  const icono = fase.tipo === 'oleada' ? '⚑' : '•';
+  return `<span class="${clase}" style="left:${left}%">${icono}</span>`;
 }
 
 function actualizarHerramientas() {
+  const disponibles = ESTADO.herramientasDisponibles || [];
+  btnHerramientaRecolocar.hidden = !disponibles.includes('recolocar');
+  btnHerramientaQuitar.hidden = !disponibles.includes('quitar');
+  btnHerramientaRecolocar.classList.toggle('tool-unavailable', btnHerramientaRecolocar.hidden);
+  btnHerramientaQuitar.classList.toggle('tool-unavailable', btnHerramientaQuitar.hidden);
   btnHerramientaRecolocar.classList.toggle('active', ESTADO.herramientaActiva === 'recolocar');
   btnHerramientaQuitar.classList.toggle('active', ESTADO.herramientaActiva === 'quitar');
   lienzo.classList.toggle('cursor-quitar', ESTADO.herramientaActiva === 'quitar');
@@ -49,12 +116,24 @@ function actualizarHerramientas() {
   );
 }
 
+function mostrarCapitana(mensaje) {
+  if (!dialogoCapitana || !mensajeCapitana) return;
+  mensajeCapitana.textContent = mensaje || '';
+  dialogoCapitana.classList.toggle('hidden', !mensaje);
+}
+
+function ocultarCapitana() {
+  mostrarCapitana('');
+}
+
 // ──────────────────────────────────────────────
 // RENDERIZAR TIENDA
 // ──────────────────────────────────────────────
 function renderizarTienda() {
   tarjetasTienda.innerHTML = '';
-  DEF_CHICAS.forEach(def => {
+  DEF_CHICAS
+    .filter(def => !ESTADO.cartasDisponibles || ESTADO.cartasDisponibles.includes(def.id))
+    .forEach(def => {
     const espera = obtenerEsperaTienda(def.id);
     const sinOro = ESTADO.oro < def.costo;
     const bloqueada = sinOro || espera > 0;
@@ -113,6 +192,10 @@ function renderizarVisualTienda(def) {
 // SELECCIONAR CHICA EN LA TIENDA
 // ──────────────────────────────────────────────
 function seleccionarChica(id) {
+  if (ESTADO.tutorial?.activo && ESTADO.tutorial?.bloqueaTienda) {
+    mostrarFlotante('La Capitana bloqueó la tienda por ahora', '#ffd000');
+    return;
+  }
   const def = DEF_CHICAS.find(d => d.id === id);
   const espera = obtenerEsperaTienda(id);
   if (!def || ESTADO.oro < def.costo || espera > 0) {
@@ -134,6 +217,10 @@ function seleccionarChica(id) {
 }
 
 function seleccionarHerramienta(herramienta) {
+  if (!ESTADO.herramientasDisponibles?.includes(herramienta)) {
+    mostrarFlotante('Herramienta bloqueada en este nivel', '#ffd000');
+    return;
+  }
   const repetir = ESTADO.herramientaActiva === herramienta;
   ESTADO.herramientaActiva = repetir ? null : herramienta;
   ESTADO.chicaSeleccionada = null;
@@ -150,4 +237,5 @@ function seleccionarHerramienta(herramienta) {
   }
   actualizarHerramientas();
   renderizarTienda();
+  notificarHerramientaTutorial(herramienta);
 }

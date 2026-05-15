@@ -32,6 +32,7 @@ function actualizar(dt) {
   actualizarChicas(dt);
   actualizarProyectiles(dt);
   actualizarParticulas(dt);
+  actualizarRecompensaNivel(dt);
   verificarOleadaCompleta();
 }
 
@@ -145,16 +146,12 @@ function actualizarZombis(dt) {
 
   aEliminar.reverse().forEach(i => {
     const z = ESTADO.zombis[i];
-    ESTADO.bajasOleada++;
-    ESTADO.zombis.splice(i, 1);
-    if (
-      ESTADO.oleadaActiva &&
-      !ESTADO.surgeActivado &&
-      ESTADO.defOleadaActual &&
-      ESTADO.bajasOleada >= ESTADO.defOleadaActual.surgeAlBajas
-    ) {
-      activarSurge();
+    if (!z.noCuentaProgreso) {
+      ESTADO.bajasOleada++;
+      ESTADO.bajasNivel++;
     }
+    ESTADO.zombis.splice(i, 1);
+    actualizarHUD();
   });
 }
 
@@ -167,22 +164,17 @@ function dispararMisilDefensa(fila) {
     vida: 0.45,
     vidaMax: 0.45,
   });
-  const bajas = ESTADO.zombis.filter(z => z.fila === fila).length;
+  const bajas = ESTADO.zombis.filter(z => z.fila === fila && !z.noCuentaProgreso).length;
   ESTADO.zombis = ESTADO.zombis.filter(z => {
     if (z.fila !== fila) return true;
     crearParticula(z.x, centroY(fila), '🔥', '#ff8f00');
     return false;
   });
   ESTADO.bajasOleada += bajas;
+  ESTADO.bajasNivel += bajas;
+  actualizarHUD();
   crearParticula(celdaX(COL_NEXO) + ESTADO.anchoCelda * 0.5, centroY(fila), '🚀', '#ff8f00');
-  if (
-    ESTADO.oleadaActiva &&
-    !ESTADO.surgeActivado &&
-    ESTADO.defOleadaActual &&
-    ESTADO.bajasOleada >= ESTADO.defOleadaActual.surgeAlBajas
-  ) {
-    activarSurge();
-  }
+  revisarTutorialMisil(fila);
   return true;
 }
 
@@ -193,7 +185,7 @@ function actualizarChicas(dt) {
   ESTADO.chicas.forEach(g => {
     const def = g.def;
     if (g.disparoAnim > 0) g.disparoAnim -= dt;
-    if (def.oroIngreso && !ESTADO.oleadaActiva) return;
+    if (def.oroIngreso && !ESTADO.faseActiva) return;
     g.enfriamiento -= dt;
 
     const gx  = centroX(g.col);
@@ -353,25 +345,110 @@ function actualizarParticulas(dt) {
 }
 
 // ──────────────────────────────────────────────
-// VERIFICAR SI LA OLEADA SE COMPLETÓ
+// RECOMPENSA DE NIVEL
 // ──────────────────────────────────────────────
-function verificarOleadaCompleta() {
-  if (!ESTADO.oleadaActiva) return;
-  if (ESTADO.colaSpawn.length > 0) return;
-  if (ESTADO.zombis.length > 0) return;
-  if (!ESTADO.surgeActivado) return;
+function actualizarRecompensaNivel(dt) {
+  const recompensa = ESTADO.recompensaCaida;
+  if (!recompensa || recompensa.lista) return;
 
-  ESTADO.oleadaActiva   = false;
-  ESTADO.oleadaCompleta = true;
-  ESTADO.defOleadaActual = null;
-  guardarProgresoOleada(ESTADO.oleada);
+  recompensa.y = Math.min(recompensa.destY, recompensa.y + ESTADO.altoCelda * 3.2 * dt);
+  recompensa.brillo = (recompensa.brillo || 0) + dt;
+}
 
-  if (ESTADO.oleada >= TOTAL_OLEADAS) {
-    setTimeout(() => mostrarVictoria(), 1200);
+function soltarRecompensaNivel() {
+  const cartaId = ESTADO.recompensaPendiente;
+  if (!cartaId) {
+    guardarProgresoNivel(ESTADO.nivel, []);
+    mostrarColeccionUnidades(null);
     return;
   }
 
-  elEstadoOleada.textContent = `Oleada ${ESTADO.oleada} completada 🎉`;
-  btnIniciarOleada.disabled = false;
-  mostrarFlotante(`✅ ¡Oleada ${ESTADO.oleada} superada!`, '#39e87a');
+  ESTADO.recompensaCaida = {
+    cartaId,
+    x: centroX(Math.floor(COLUMNAS / 2)),
+    y: celdaY(0) - ESTADO.altoCelda,
+    destY: centroY(Math.floor(FILAS / 2)),
+    lista: false,
+    brillo: 0,
+  };
+  elEstadoOleada.textContent = 'Carta nueva detectada';
+  mostrarFlotante('✨ ¡Carta nueva! Recógela', '#ffd000');
+}
+
+function recogerRecompensaNivel(px, py) {
+  const recompensa = ESTADO.recompensaCaida;
+  if (!recompensa) return false;
+
+  const radio = ESTADO.anchoCelda * 0.52;
+  const dentro =
+    Math.abs(px - recompensa.x) <= radio &&
+    Math.abs(py - recompensa.y) <= radio;
+  if (!dentro) return false;
+
+  recompensa.lista = true;
+  const progreso = guardarProgresoNivel(ESTADO.nivel, [recompensa.cartaId]);
+  ESTADO.cartasDisponibles = progreso.cartasDesbloqueadas;
+  reproducirCinematicaCarta(recompensa.cartaId, () => mostrarColeccionUnidades(recompensa.cartaId));
+  return true;
+}
+
+function completarNivel() {
+  ESTADO.faseActiva = false;
+  ESTADO.oleadaActiva = false;
+  ESTADO.nivelCompleto = true;
+  ESTADO.defOleadaActual = null;
+  ESTADO.faseActual = null;
+  btnIniciarOleada.disabled = true;
+  btnIniciarOleada.textContent = 'Nivel completo';
+  elEstadoOleada.textContent = `${ESTADO.nivelActual.nombre} completado`;
+  actualizarHUD();
+  soltarRecompensaNivel();
+}
+
+// ──────────────────────────────────────────────
+// VERIFICAR SI LA FASE SE COMPLETÓ
+// ──────────────────────────────────────────────
+function verificarOleadaCompleta() {
+  if (!ESTADO.faseActiva) return;
+  if (!ESTADO.faseActual) return;
+  if (ESTADO.colaSpawn.length > 0) return;
+  if (ESTADO.zombis.length > 0) return;
+
+  const faseTerminada = ESTADO.faseActual;
+  ESTADO.faseActiva = false;
+  ESTADO.oleadaActiva = false;
+  ESTADO.oleadaCompleta = true;
+  ESTADO.defOleadaActual = null;
+  ESTADO.faseActual = null;
+  actualizarHUD();
+
+  const quedanFases = ESTADO.faseIndice + 1 < ESTADO.nivelActual.fases.length;
+  if (!quedanFases) {
+    if (!mostrarDialogoFinNivel(completarNivel)) completarNivel();
+    return;
+  }
+
+  actualizarBotonFase();
+  mostrarFlotante(
+    faseTerminada.tipo === 'ataque' ? '✅ Ataque repelido' : '✅ Oleada superada',
+    '#39e87a'
+  );
+  elEstadoOleada.textContent = faseTerminada.tipo === 'ataque'
+    ? 'Oleada entrante...'
+    : 'Siguiente ataque entrante...';
+  if (faseTerminada.tipo === 'ataque') mostrarAlertaPeligro('OLEADA SE APROXIMA');
+  const ejecucion = ESTADO.ejecucionNivel;
+  const continuar = () => {
+    if (
+      ESTADO.ejecucionNivel === ejecucion &&
+      !ESTADO.pausado &&
+      !ESTADO.faseActiva &&
+      !ESTADO.nivelCompleto
+    ) {
+      iniciarSiguienteFase();
+    }
+  };
+
+  if (mostrarDialogoEntreFases(ESTADO.faseIndice, continuar)) return;
+  setTimeout(continuar, faseTerminada.tipo === 'ataque' ? 2200 : 3200);
 }

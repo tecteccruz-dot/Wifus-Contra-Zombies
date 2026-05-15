@@ -48,11 +48,16 @@ function pixelesACelda(px, py) {
 function esColocacionValida(col, fila) {
   if (col <= 0 || col >= COLUMNAS) return false;
   if (fila < 0 || fila >= FILAS) return false;
+  if (!esCarrilActivo(fila)) return false;
   return !ESTADO.chicas.some(g => g.col === col && g.fila === fila);
 }
 
 function obtenerChicaEnCelda(col, fila) {
   return ESTADO.chicas.find(g => g.col === col && g.fila === fila) || null;
+}
+
+function esCarrilActivo(fila) {
+  return !ESTADO.carrilesActivos || ESTADO.carrilesActivos.includes(fila);
 }
 
 // ──────────────────────────────────────────────
@@ -62,13 +67,20 @@ function colocarChica(col, fila) {
   if (!ESTADO.chicaSeleccionada) return;
   const def = DEF_CHICAS.find(d => d.id === ESTADO.chicaSeleccionada);
   if (!def) return;
-  if (!ESTADO.oleadaActiva) { mostrarFlotante('⚠️ Inicia una oleada para desplegar wifus', '#ffd700'); return; }
+  if (!tutorialPermiteColocacion(def.id, col, fila)) {
+    mostrarFlotante('La Capitana marcó otra casilla', '#ffd000');
+    return;
+  }
+  if (!ESTADO.faseActiva && !tutorialPermiteColocarSinFase()) {
+    mostrarFlotante('⚠️ Inicia la fase para desplegar wifus', '#ffd700');
+    return;
+  }
   const espera = obtenerEsperaTienda(def.id);
   if (espera > 0) { mostrarFlotante(`⏳ Espera ${formatearEsperaTienda(espera)}`, def.color); return; }
   if (ESTADO.oro < def.costo) { mostrarFlotante('💰 ¡Oro insuficiente!', '#ff3355'); return; }
   if (!esColocacionValida(col, fila)) { mostrarFlotante('❌ Celda no válida'); return; }
 
-  ESTADO.chicas.push({
+  const chica = {
     def,
     col, fila,
     vida     : def.vida,
@@ -78,7 +90,8 @@ function colocarChica(col, fila) {
     animacion: 'idle',
     disparoAnim: 0,
     disparosRafaga: def.rafagaDisparos || 1,
-  });
+  };
+  ESTADO.chicas.push(chica);
   ESTADO.oro -= def.costo;
   if (def.tiempoEspera > 0) ESTADO.enfriamientosTienda[def.id] = def.tiempoEspera;
   ESTADO.chicaSeleccionada = null;
@@ -86,6 +99,7 @@ function colocarChica(col, fila) {
   mostrarFlotante(`${def.emoji} ¡${def.nombre} colocada!`, def.color);
   renderizarTienda();
   actualizarHUD();
+  revisarTutorialColocacion(chica);
 }
 
 function recolocarChica(col, fila) {
@@ -120,16 +134,41 @@ function recolocarChica(col, fila) {
     return;
   }
 
+  if (!tutorialPermiteReubicacion(ESTADO.chicaRecolocando, col, fila)) {
+    mostrarFlotante('La Capitana marcó otra casilla', '#ffd000');
+    return;
+  }
   if (!esColocacionValida(col, fila)) { mostrarFlotante('❌ Celda no válida'); return; }
   ESTADO.chicaRecolocando.col = col;
   ESTADO.chicaRecolocando.fila = fila;
   mostrarFlotante('↔ Wifu recolocada', ESTADO.chicaRecolocando.def.color);
   ESTADO.chicaRecolocando = null;
   ESTADO.chicaRecolocandoOrigen = null;
-  ESTADO.herramientaActiva = null;
+  if (!ESTADO.tutorial?.activo || ESTADO.tutorial.tipo !== 'reubicar') {
+    ESTADO.herramientaActiva = null;
+  }
   pistaTienda.textContent = 'Selecciona una chica';
   ESTADO.celdaPreviaHerramienta = null;
   actualizarHerramientas();
+  revisarTutorialReubicacion();
+}
+
+function tutorialPermiteColocacion(idUnidad, col, fila) {
+  const tutorial = ESTADO.tutorial;
+  if (!tutorial?.activo || tutorial.tipo !== 'colocar') return true;
+  const objetivo = tutorial.objetivo;
+  return idUnidad === objetivo.unidad && col === objetivo.col && fila === objetivo.fila;
+}
+
+function tutorialPermiteColocarSinFase() {
+  return ESTADO.tutorial?.activo && ESTADO.tutorial.tipo === 'colocar';
+}
+
+function tutorialPermiteReubicacion(chica, col, fila) {
+  const tutorial = ESTADO.tutorial;
+  if (!tutorial?.activo || tutorial.tipo !== 'reubicar') return true;
+  const destino = chica?.tutorialDestino;
+  return Boolean(destino) && col === destino.col && fila === destino.fila;
 }
 
 function cancelarRecolocacion() {
@@ -200,10 +239,11 @@ function actualizarPreviaColocacion(ex, ey) {
     fila,
     valida:
       Boolean(def) &&
-      ESTADO.oleadaActiva &&
+      (ESTADO.oleadaActiva || tutorialPermiteColocarSinFase()) &&
       ESTADO.oro >= def.costo &&
       obtenerEsperaTienda(def.id) <= 0 &&
-      esColocacionValida(col, fila),
+      esColocacionValida(col, fila) &&
+      tutorialPermiteColocacion(def.id, col, fila),
   };
 }
 
@@ -244,7 +284,7 @@ function actualizarPreviaHerramienta(ex, ey) {
     fila,
     accion: 'recolocar-destino',
     tieneUnidad: Boolean(chica),
-    valida: esColocacionValida(col, fila),
+    valida: esColocacionValida(col, fila) && tutorialPermiteReubicacion(ESTADO.chicaRecolocando, col, fila),
   };
 }
 
@@ -257,6 +297,7 @@ function manejarClickLienzo(ex, ey) {
   const rect = lienzo.getBoundingClientRect();
   const px = ex - rect.left;
   const py = ey - rect.top;
+  if (recogerRecompensaNivel(px, py)) return;
   const { col, fila } = pixelesACelda(px, py);
   if (col >= 1 && col < COLUMNAS && fila >= 0 && fila < FILAS) {
     if (ESTADO.herramientaActiva === 'recolocar') { recolocarChica(col, fila); return; }

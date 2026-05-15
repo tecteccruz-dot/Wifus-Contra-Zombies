@@ -67,9 +67,36 @@
 - [x] Mejorar herramienta `Recolocar` con cursor amarillo, resaltado de origen, fantasma de destino verde/rojo y cancelacion con ESC.
 - [x] Hacer que `ESC` cancele todo el modo `Recolocar` antes o despues de levantar una wifu, y que el modo termine tras colocarla.
 - [x] Permitir cancelar la herramienta `Quitar` con `ESC`.
+- [x] Migrar el flujo principal a niveles con fases de `ataque` y `oleada`.
+- [x] Crear Nivel 1 con 3 carriles centrales activos, 450 de oro y solo Pistolera disponible.
+- [x] Agregar recompensa de carta al completar Nivel 1: cae la carta de Stremer, se recoge y abre panel de unidades.
+- [x] Agregar progreso local por nivel y cartas desbloqueadas.
+- [x] Agregar pantalla previa de nivel con carriles activos y zombis que apareceran.
+- [x] Automatizar ataques y oleadas para que avancen sin boton manual.
+- [x] Ajustar ataque irregular del Nivel 1 con intervalos aleatorios entre 2 y 6 segundos y raras salidas dobles.
+- [x] Separar `DEF_CHICAS`, `TIPOS_ZOMBI` y `NIVELES` en `chicas.js`, `zombis.js` y `niveles.js`.
+- [x] Reemplazar texto central del HUD por barra de progreso del nivel con marcadores de ataque y banderas de oleada.
+- [x] Hacer que la barra de progreso avance por zombis eliminados acumulados del nivel, sin reiniciarse entre ataque y oleada.
+- [x] Agregar sistema de tutorial por nivel dirigido por Capitana con panel de diálogo.
+- [x] Nivel 1 tutorial: herramientas desactivadas y misión de colocar Pistolera en la casilla marcada.
+- [x] Nivel 2 tutorial: solo reubicar activo, dos Streamer iniciales al fondo, reubicación obligatoria a casillas marcadas y desbloqueo posterior de quitar.
+- [x] Preparar Nivel 3 como cierre del tutorial con herramientas disponibles.
+- [x] Expandir Nivel 1 con diálogo de Capitana entre ataque y oleada, regalo de 1,000 de oro, y cierre narrativo antes de terminar el nivel.
+- [x] Corregir destinos del tutorial de Nivel 2 para usar los carriles visuales 3 y 5 (`fila` 2 y 4).
+- [x] Corregir tienda bloqueada tras completar la misión de tutorial del Nivel 2.
+- [x] Ajustar Nivel 2 para que Streamer sea aliada prestada y se desbloquee como carta solo al recoger la recompensa final.
+- [x] Agregar cinemática de carta grande con fundido negro al recoger una recompensa.
+- [x] Hacer que Capitana explique la función de Streamer tras reubicarlas en Nivel 2 y espere clic/Enter.
+- [x] Saltar briefing de amenaza en Nivel 1 y entrar directo al tablero con fundido negro de revelación.
+- [x] Mejorar aviso de oleada con alerta roja grande, estilo peligro, y pulso visual sobre el tablero.
+- [x] Rehacer Nivel 3 como tutorial de pérdida de línea: carriles internos activos, unidades iniciales, 5 zombis cerca del nexo, misil de protección, explicación de Capitana y entrega de 2,000 de oro.
+- [x] Agregar recompensa Cazadora al final del Nivel 3 con explicación de Capitana y carta recogible.
+- [x] Agregar Nivel 4 con todos los carriles disponibles, Cazadora en el mazo y 1,000 de oro inicial.
 
 ## Pendientes / mejoras futuras
 
+- [ ] Diseñar y balancear Nivel 2 definitivo con la carta Stremer ya desbloqueada.
+- [ ] Playtestear si Pistolera con costo 150 y 450 de oro inicial deja buen ritmo para Nivel 1.
 - [ ] Ajustar balance de `Stremer` si el ritmo de oro resulta demasiado alto o bajo durante playtest.
 - [ ] Playtestear el ritmo de `surgeAtKills`, cantidades y delays de la gran oleada.
 - [ ] Revisar si las primeras 3 oleadas necesitan carriles menos aleatorios o mas tiempo entre spawns.
