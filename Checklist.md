@@ -60,6 +60,13 @@
 - [x] Actualizar `Documentacion.md` con los assets de marca.
 - [x] Corregir bug de seleccion de cartas de tienda que se activaban y desactivaban por doble disparo de click/tap.
 - [x] Mejorar visualmente el menu principal para acercarlo al estilo anime arcade zombie del logo.
+- [x] Agregar fantasma de colocacion verde/rojo al seleccionar una unidad y apuntar al tablero.
+- [x] Aumentar el tablero de 11 a 13 celdas visibles de largo.
+- [x] Cambiar vida del Nexo a 1 y separar activacion de misil/daño: misil a media celda, daño al cruzar todo el Nexo.
+- [x] Agregar cursor X e indicador rojo sobre wifus al usar la herramienta `Quitar`.
+- [x] Mejorar herramienta `Recolocar` con cursor amarillo, resaltado de origen, fantasma de destino verde/rojo y cancelacion con ESC.
+- [x] Hacer que `ESC` cancele todo el modo `Recolocar` antes o despues de levantar una wifu, y que el modo termine tras colocarla.
+- [x] Permitir cancelar la herramienta `Quitar` con `ESC`.
 
 ## Pendientes / mejoras futuras
 

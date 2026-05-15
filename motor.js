@@ -114,9 +114,17 @@ function actualizarZombis(dt) {
       // moverse hacia la izquierda
       z.x -= z.def.vel * ESTADO.anchoCelda * dt;
 
-      // ¿llegó al nexo?
-      if (z.x <= celdaX(COL_NEXO) + ESTADO.anchoCelda) {
-        if (ESTADO.misilesDefensa[z.fila]) { filasConMisil.add(z.fila); return; }
+      const xMitadNexo = celdaX(COL_NEXO) + ESTADO.anchoCelda * 0.5;
+      const xCruzoNexo = celdaX(COL_NEXO);
+
+      // El misil defensivo se activa al llegar a media celda del Nexo.
+      if (z.x <= xMitadNexo && ESTADO.misilesDefensa[z.fila]) {
+        filasConMisil.add(z.fila);
+        return;
+      }
+
+      // El Nexo recibe daño solo cuando el zombi cruza toda la celda del Nexo.
+      if (z.x <= xCruzoNexo) {
         z.enfAtaque -= dt;
         if (z.enfAtaque <= 0) {
           ESTADO.vidaNexo -= z.danio;

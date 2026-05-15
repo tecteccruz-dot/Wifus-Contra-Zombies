@@ -137,7 +137,7 @@ Se compone de 3 zonas:
 | Elemento | `id` | Muestra | Se actualiza en |
 |----------|------|---------|-----------------|
 | Número de oleada | `#wave-display` | `1/10` | `interfaz.js → actualizarHUD()` |
-| HP del Nexo | `#nexo-hp` | `100` | `interfaz.js → actualizarHUD()` |
+| HP del Nexo | `#nexo-hp` | `1` | `interfaz.js → actualizarHUD()` |
 | Logo del juego | `.game-logo` | "Wifus contra Zombies" | Estático |
 | Botón pausa | `#btn-pause` | ⏸ | `control.js` |
 
@@ -156,7 +156,7 @@ Barra inferior bajo el tablero. Aloja hasta 8 cartas horizontales, herramientas 
 
 #### Tablero (`#board-container`)
 
-Contiene `<canvas id="game-canvas">`. Dimensiones responsivas calculadas en `redimensionarLienzo()` (`tablero.js`). Grid: 10 columnas × 6 filas. Columna 0 = Nexo/línea azul con misiles de defensa por carril, Columna 10 = spawn zombis.
+Contiene `<canvas id="game-canvas">`. Dimensiones responsivas calculadas en `redimensionarLienzo()` (`tablero.js`). Grid visible: 13 celdas de largo × 6 filas (`Nexo` + 12 columnas de tablero). Columna 0 = Nexo/línea azul con misiles de defensa por carril, Columna 12 = borde/spawn de zombis.
 
 ### 4.5. Pantalla de Pausa (`#screen-pause`)
 
@@ -226,10 +226,10 @@ Toast de notificaciones. Se muestra con `mostrarFlotante(msg, color)` en `interf
 
 | Nombre | Tipo | Descripción |
 |--------|------|-------------|
-| `COLUMNAS` | `10` | Columnas del tablero |
+| `COLUMNAS` | `12` | Columnas del tablero; con el Nexo son 13 celdas visibles de largo |
 | `FILAS` | `6` | Filas del tablero |
 | `COL_NEXO` | `0` | Columna del nexo (izquierda) |
-| `COL_SPAWN` | `10` | Columna de spawn de zombis (derecha) |
+| `COL_SPAWN` | `12` | Columna de spawn de zombis (derecha) |
 | `TOTAL_OLEADAS` | `10` | Número total de oleadas |
 | `PALETA` | Object | Colores usados en el Canvas |
 | `DEF_CHICAS` | Array[6] | Definiciones de las 6 chicas |
@@ -341,16 +341,19 @@ Cada oleada tiene dos fases:
 | Campo | Tipo | Inicial | Descripción |
 |-------|------|---------|-------------|
 | `oro` | number | 500 | Oro disponible |
-| `vidaNexo` | number | 100 | HP actual del nexo |
-| `vidaMaxNexo` | number | 100 | HP máximo del nexo |
+| `vidaNexo` | number | 1 | HP actual del nexo |
+| `vidaMaxNexo` | number | 1 | HP máximo del nexo |
 | `oleada` | number | 0 | Oleada actual |
 | `oleadaActiva` | boolean | false | ¿Hay oleada en curso? |
 | `oleadaCompleta` | boolean | false | ¿Oleada terminada? |
 | `todasOleadasHechas` | boolean | false | ¿10 oleadas completadas? |
 | `pausado` | boolean | false | ¿Juego en pausa? |
 | `chicaSeleccionada` | string\|null | null | ID de chica seleccionada |
+| `celdaPreviaColocacion` | object\|null | null | Celda bajo cursor/touch para dibujar fantasma de colocación (`{ col, fila, valida }`) |
+| `celdaPreviaHerramienta` | object\|null | null | Celda bajo cursor/touch para previsualizar herramientas como quitar o recolocar (`{ col, fila, accion, tieneUnidad, valida }`) |
 | `herramientaActiva` | string\|null | null | Herramienta de tablero activa (`recolocar` o `quitar`) |
 | `chicaRecolocando` | object\|null | null | Wifu seleccionada como origen para recolocar |
+| `chicaRecolocandoOrigen` | object\|null | null | Coordenadas originales de la wifu levantada para poder cancelar con ESC |
 | `chicas` | Array | [] | Chicas colocadas |
 | `zombis` | Array | [] | Zombis activos |
 | `proyectiles` | Array | [] | Proyectiles en vuelo |
@@ -428,7 +431,7 @@ Cada oleada tiene dos fases:
 | `mostrarPantalla(id)` | ID de pantalla | Cambia la pantalla activa |
 | `mostrarFlotante(mensaje, color)` | Texto, color borde | Muestra toast temporal (1.8s) |
 | `actualizarHUD()` | — | Refresca oro, vida nexo y oleada en el HUD |
-| `actualizarHerramientas()` | — | Refresca estado visual de botones de herramientas |
+| `actualizarHerramientas()` | — | Refresca estado visual de botones de herramientas y cursores del canvas |
 | `renderizarTienda()` | — | Reconstruye cartas de la tienda desde `DEF_CHICAS`; muestra bloqueo por oro o espera; las cartas usan `pointerup` con guardia anti-doble disparo |
 | `seleccionarChica(id)` | ID de chica | Selecciona/deselecciona chica; valida oro y espera de tarjeta |
 | `seleccionarHerramienta(herramienta)` | ID de herramienta | Alterna los modos `recolocar` y `quitar`, cancelando selección de chica |
@@ -447,14 +450,23 @@ Cada oleada tiene dos fases:
 | `pixelesACelda(px, py)` | Píxeles X, Y | Convierte a {col, fila} |
 | `esColocacionValida(col, fila)` | Coordenadas | Verifica que la celda sea válida y esté libre |
 | `obtenerChicaEnCelda(col, fila)` | Coordenadas | Devuelve la wifu colocada en esa celda o `null` |
+| `actualizarPreviaColocacion(ex, ey)` | Coordenadas evento | Actualiza la celda fantasma al mover mouse/touch; verde si se puede colocar, rojo si no |
+| `actualizarPreviaHerramienta(ex, ey)` | Coordenadas evento | Actualiza el objetivo bajo cursor para `quitar` y `recolocar`; en recolocación marca origen amarillo y destino verde/rojo |
+| `limpiarPreviaColocacion()` | — | Borra la previsualización al salir del tablero o cancelar selección |
 | `colocarChica(col, fila)` | Coordenadas | Coloca una chica en el grid solo si hay `oleadaActiva`; al colocar limpia la selección de tienda |
-| `recolocarChica(col, fila)` | Coordenadas | Primer clic elige wifu; segundo clic la mueve a una celda libre |
+| `recolocarChica(col, fila)` | Coordenadas | Primer clic levanta una wifu; segundo clic la mueve a una celda libre siguiendo reglas normales de colocación |
+| `cancelarRecolocacion()` | — | Cancela el modo de reubicación; si había unidad levantada, la devuelve a su celda original |
+| `cancelarHerramientaActiva()` | — | Cancela con `Escape` la herramienta activa (`quitar` o `recolocar`) y limpia cursores/previsualizaciones |
 | `quitarChica(col, fila)` | Coordenadas | Retira una wifu y devuelve 10% de su costo redondeado hacia abajo |
 | `manejarClickLienzo(ex, ey)` | Coordenadas evento | Convierte click/touch a celda e intenta colocar chica o usar herramienta |
 
 **Eventos registrados:**
 - `lienzo.click` → `manejarClickLienzo`
+- `lienzo.mousemove` → `actualizarPreviaColocacion`
+- `lienzo.mouseleave` → `limpiarPreviaColocacion`
+- `lienzo.touchmove` → `actualizarPreviaColocacion`
 - `lienzo.touchend` → `manejarClickLienzo`
+- `window.keydown` → `Escape` cancela la herramienta activa (`quitar` o `recolocar`)
 - `window.resize` → `redimensionarLienzo()` (si el juego está activo)
 
 ---
@@ -479,7 +491,7 @@ Cada oleada tiene dos fases:
 | `actualizarEnfriamientosTienda(dt)` | Descuenta el tiempo de espera de las tarjetas y refresca la tienda cuando cambia el contador |
 | `actualizarMisilesDefensa(dt)` | Avanza y limpia animaciones de misiles defensivos |
 | `actualizarColaSpawn(dt)` | Procesa la cola: spawnea zombis al cumplir su retraso |
-| `actualizarZombis(dt)` | **Lógica zombi:** aura de cura, ataque melee a chicas, avance al nexo, disparo de misil por carril, daño al nexo, muerte y conteo de bajas para activar surge |
+| `actualizarZombis(dt)` | **Lógica zombi:** aura de cura, ataque melee a chicas, avance al nexo, disparo de misil por carril al llegar a media celda del Nexo, daño al Nexo solo al cruzar toda su celda, muerte y conteo de bajas para activar surge |
 | `actualizarChicas(dt)` | **Lógica chicas:** Stremer genera oro solo con oleada activa. Doctora cura a una aliada herida justo delante o detrás en la misma fila. Cazadora dispara ráfaga de 2 tiros rápidos y luego entra en cooldown de 2s. Las demás buscan zombi más cercano en su fila y disparan. |
 | `dispararProyectil(g, objetivo, desdeX, desdeY)` | Crea proyectil hacia el zombi objetivo |
 | `dispararMisilDefensa(fila)` | Consume el misil de una fila, elimina zombis de ese carril y cuenta bajas |
@@ -493,7 +505,7 @@ Cada oleada tiene dos fases:
 
 | Función | Qué dibuja |
 |---------|------------|
-| `dibujar()` | Orquesta: cuadrícula → nexo → misiles → chicas → zombis → proyectiles → partículas → guía |
+| `dibujar()` | Orquesta: cuadrícula → nexo → misiles → chicas → indicadores de herramienta → zombis → proyectiles → partículas → guía |
 | `dibujarCuadricula()` | Celdas 10×6 alternando verde claro/oscuro |
 | `dibujarNexo()` | Columna 0: fondo azul, línea azul de activación, 💎, barra de vida, texto "NEXO" |
 | `dibujarMisilesDefensa()` | Iconos/indicadores de misil disponible por fila |
@@ -505,6 +517,9 @@ Cada oleada tiene dos fases:
 | `dibujarProyectiles()` | Círculo pequeño con glow exterior |
 | `dibujarParticulas()` | Texto flotante o anillos AOE expansivos |
 | `dibujarGuiaColocacion()` | Tiñe celdas vacías con azul eléctrico semitransparente al tener chica seleccionada |
+| `dibujarFantasmaColocacion()` | Dibuja previsualización de la unidad seleccionada: verde si la casilla es colocable, rojo si está ocupada/no válida |
+| `dibujarIndicadorEliminar()` | Dibuja overlay rojo y X sobre la wifu bajo cursor cuando la herramienta `quitar` está activa |
+| `dibujarIndicadorRecolocar()` | Dibuja overlay amarillo sobre la wifu elegible, origen de reubicación y fantasma verde/rojo del destino |
 
 ---
 
@@ -625,7 +640,7 @@ Game Loop (cada frame, ~60fps):
 | Composición de oleadas | `config.js` → `construirOleadas()` |
 | Escalamiento por oleada | `oleadas.js` → `aparecerZombi()` (multiplicadores 0.18 y 0.10) |
 | Oro inicial | `nucleo.js` → `iniciarEstado()` (`oro: 500`) |
-| Vida del Nexo | `nucleo.js` → `iniciarEstado()` (`vidaNexo: 100`) |
+| Vida del Nexo | `nucleo.js` → `iniciarEstado()` (`vidaNexo: 1`) |
 
 ### 8.4. Cambiar la cantidad de oleadas
 
@@ -701,7 +716,8 @@ No hay sistema de audio. Habría que agregar objetos `Audio` y reproducir en los
 - **Canvas responsivo:** `redimensionarLienzo()` se llama al iniciar y en `window.resize`.
 - **Delta time:** `dt` en segundos para movimiento independiente del framerate. Limitado a 0.1s para evitar saltos.
 - **Pausa:** Solo detiene `actualizar()`, no `dibujar()`. El canvas sigue renderizando el último estado.
-- **Touch y click:** Ambos llaman a `manejarClickLienzo()`. Touch usa `preventDefault()`. Las wifus solo pueden desplegarse durante una oleada activa. Si hay herramienta activa, el clic se usa para recolocar o quitar en vez de desplegar.
+- **Touch y click:** Ambos llaman a `manejarClickLienzo()`. Touch usa `preventDefault()`. Las wifus solo pueden desplegarse durante una oleada activa. Si hay herramienta activa, el clic se usa para recolocar o quitar en vez de desplegar. `Escape` cancela la herramienta activa. La herramienta `recolocar` pinta en amarillo la unidad bajo cursor, levanta la wifu al primer clic, muestra un fantasma de destino verde/rojo, se cancela antes o después de levantar unidad, y sale del modo al colocarla.
+- **Nexo:** Tiene `1` HP. Un zombi solo le hace daño cuando cruza toda la celda del Nexo; el misil defensivo de carril sí se activa antes, cuando el zombi llega a la mitad de esa celda.
 - **Doctora:** Tiene poca vida (`35`). Busca aliadas con `vida < vidaMax` solo en la misma fila, justo delante o detrás a máximo 1 casilla. No cura diagonales, arriba, abajo ni objetivos más lejanos. Cura 10% de la vida máxima del objetivo cada 2s y su tarjeta queda en espera 30s tras colocarla.
 - **Pistolera:** Tiene alcance frontal completo (`COLUMNAS`) y solo busca zombis delante de ella en su misma fila.
 - **Cazadora:** Usa `rafagaDisparos`, `intervaloRafaga` y `cooldownRafaga`: dispara 2 veces rápido a un solo objetivo y luego espera 2s antes de volver a disparar.

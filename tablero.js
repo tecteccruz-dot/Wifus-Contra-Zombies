@@ -93,22 +93,30 @@ function recolocarChica(col, fila) {
     const chica = obtenerChicaEnCelda(col, fila);
     if (!chica) { mostrarFlotante('↔ Elige una wifu para mover'); return; }
     ESTADO.chicaRecolocando = chica;
+    ESTADO.chicaRecolocandoOrigen = { col: chica.col, fila: chica.fila };
     pistaTienda.textContent = `Mueve a: ${chica.def.emoji} ${chica.def.nombre}`;
     mostrarFlotante('↔ Elige la nueva celda', chica.def.color);
+    actualizarHerramientas();
     return;
   }
 
   if (!ESTADO.chicas.includes(ESTADO.chicaRecolocando)) {
     ESTADO.chicaRecolocando = null;
+    ESTADO.chicaRecolocandoOrigen = null;
     pistaTienda.textContent = 'Elige una wifu para mover';
     mostrarFlotante('↔ Esa wifu ya no está en el tablero');
+    actualizarHerramientas();
     return;
   }
 
   if (ESTADO.chicaRecolocando.col === col && ESTADO.chicaRecolocando.fila === fila) {
     ESTADO.chicaRecolocando = null;
+    ESTADO.chicaRecolocandoOrigen = null;
+    ESTADO.herramientaActiva = null;
     pistaTienda.textContent = 'Elige una wifu para mover';
     mostrarFlotante('↔ Recolocación cancelada');
+    ESTADO.celdaPreviaHerramienta = null;
+    actualizarHerramientas();
     return;
   }
 
@@ -117,7 +125,42 @@ function recolocarChica(col, fila) {
   ESTADO.chicaRecolocando.fila = fila;
   mostrarFlotante('↔ Wifu recolocada', ESTADO.chicaRecolocando.def.color);
   ESTADO.chicaRecolocando = null;
-  pistaTienda.textContent = 'Elige una wifu para mover';
+  ESTADO.chicaRecolocandoOrigen = null;
+  ESTADO.herramientaActiva = null;
+  pistaTienda.textContent = 'Selecciona una chica';
+  ESTADO.celdaPreviaHerramienta = null;
+  actualizarHerramientas();
+}
+
+function cancelarRecolocacion() {
+  if (ESTADO.chicaRecolocandoOrigen && ESTADO.chicas.includes(ESTADO.chicaRecolocando)) {
+    ESTADO.chicaRecolocando.col = ESTADO.chicaRecolocandoOrigen.col;
+    ESTADO.chicaRecolocando.fila = ESTADO.chicaRecolocandoOrigen.fila;
+  }
+
+  ESTADO.chicaRecolocando = null;
+  ESTADO.chicaRecolocandoOrigen = null;
+  ESTADO.herramientaActiva = null;
+  ESTADO.celdaPreviaHerramienta = null;
+  pistaTienda.textContent = 'Selecciona una chica';
+  mostrarFlotante('↔ Recolocación cancelada');
+  actualizarHerramientas();
+}
+
+function cancelarHerramientaActiva() {
+  const herramienta = ESTADO.herramientaActiva;
+  if (!herramienta) return;
+
+  if (herramienta === 'recolocar') {
+    cancelarRecolocacion();
+    return;
+  }
+
+  ESTADO.herramientaActiva = null;
+  ESTADO.celdaPreviaHerramienta = null;
+  pistaTienda.textContent = 'Selecciona una chica';
+  mostrarFlotante('✖ Herramienta cancelada');
+  actualizarHerramientas();
 }
 
 function quitarChica(col, fila) {
@@ -127,15 +170,89 @@ function quitarChica(col, fila) {
   ESTADO.oro += reembolso;
   ESTADO.chicas = ESTADO.chicas.filter(g => g !== chica);
   ESTADO.proyectiles = ESTADO.proyectiles.filter(p => p.deChica !== chica);
-  if (ESTADO.chicaRecolocando === chica) ESTADO.chicaRecolocando = null;
+  if (ESTADO.chicaRecolocando === chica) {
+    ESTADO.chicaRecolocando = null;
+    ESTADO.chicaRecolocandoOrigen = null;
+  }
+  ESTADO.celdaPreviaHerramienta = null;
   mostrarFlotante(`✖ ${chica.def.nombre} retirada +${reembolso}💰`, chica.def.color);
   renderizarTienda();
   actualizarHUD();
 }
 
 // ──────────────────────────────────────────────
-// MANEJAR CLICK / TOUCH SOBRE EL CANVAS
+// PREVISUALIZACIÓN Y CLICK / TOUCH SOBRE EL CANVAS
 // ──────────────────────────────────────────────
+function actualizarPreviaColocacion(ex, ey) {
+  if (!ESTADO.chicaSeleccionada || ESTADO.herramientaActiva) {
+    ESTADO.celdaPreviaColocacion = null;
+    return;
+  }
+
+  const rect = lienzo.getBoundingClientRect();
+  const px = ex - rect.left;
+  const py = ey - rect.top;
+  const { col, fila } = pixelesACelda(px, py);
+  const def = DEF_CHICAS.find(d => d.id === ESTADO.chicaSeleccionada);
+
+  ESTADO.celdaPreviaColocacion = {
+    col,
+    fila,
+    valida:
+      Boolean(def) &&
+      ESTADO.oleadaActiva &&
+      ESTADO.oro >= def.costo &&
+      obtenerEsperaTienda(def.id) <= 0 &&
+      esColocacionValida(col, fila),
+  };
+}
+
+function actualizarPreviaHerramienta(ex, ey) {
+  if (!['quitar', 'recolocar'].includes(ESTADO.herramientaActiva)) {
+    ESTADO.celdaPreviaHerramienta = null;
+    return;
+  }
+
+  const rect = lienzo.getBoundingClientRect();
+  const px = ex - rect.left;
+  const py = ey - rect.top;
+  const { col, fila } = pixelesACelda(px, py);
+  const chica = obtenerChicaEnCelda(col, fila);
+
+  if (ESTADO.herramientaActiva === 'quitar') {
+    ESTADO.celdaPreviaHerramienta = {
+      col,
+      fila,
+      accion: 'quitar',
+      tieneUnidad: Boolean(chica),
+    };
+    return;
+  }
+
+  if (!ESTADO.chicaRecolocando) {
+    ESTADO.celdaPreviaHerramienta = {
+      col,
+      fila,
+      accion: 'recolocar-origen',
+      tieneUnidad: Boolean(chica),
+    };
+    return;
+  }
+
+  ESTADO.celdaPreviaHerramienta = {
+    col,
+    fila,
+    accion: 'recolocar-destino',
+    tieneUnidad: Boolean(chica),
+    valida: esColocacionValida(col, fila),
+  };
+}
+
+function limpiarPreviaColocacion() {
+  ESTADO.celdaPreviaColocacion = null;
+  ESTADO.celdaPreviaHerramienta = null;
+}
+
 function manejarClickLienzo(ex, ey) {
   const rect = lienzo.getBoundingClientRect();
   const px = ex - rect.left;
@@ -146,6 +263,7 @@ function manejarClickLienzo(ex, ey) {
     if (ESTADO.herramientaActiva === 'quitar') { quitarChica(col, fila); return; }
     colocarChica(col, fila);
   }
+  if (!ESTADO.chicaSeleccionada) limpiarPreviaColocacion();
 }
 
 // ──────────────────────────────────────────────
@@ -156,12 +274,36 @@ lienzo.addEventListener('click', e => {
   manejarClickLienzo(e.clientX, e.clientY);
 });
 
+lienzo.addEventListener('mousemove', e => {
+  if (ESTADO.pausado) return;
+  actualizarPreviaColocacion(e.clientX, e.clientY);
+  actualizarPreviaHerramienta(e.clientX, e.clientY);
+});
+
+lienzo.addEventListener('mouseleave', limpiarPreviaColocacion);
+
+lienzo.addEventListener('touchmove', e => {
+  if (ESTADO.pausado) return;
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  actualizarPreviaColocacion(t.clientX, t.clientY);
+  actualizarPreviaHerramienta(t.clientX, t.clientY);
+}, { passive: false });
+
 lienzo.addEventListener('touchend', e => {
   if (ESTADO.pausado) return;
   e.preventDefault();
   const t = e.changedTouches[0];
+  actualizarPreviaColocacion(t.clientX, t.clientY);
+  actualizarPreviaHerramienta(t.clientX, t.clientY);
   manejarClickLienzo(t.clientX, t.clientY);
 }, { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !ESTADO.herramientaActiva) return;
+  e.preventDefault();
+  cancelarHerramientaActiva();
+});
 
 window.addEventListener('resize', () => {
   if (document.getElementById('screen-game').classList.contains('active')) {

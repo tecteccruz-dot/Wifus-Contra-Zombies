@@ -16,11 +16,16 @@ function dibujar() {
   dibujarNexo();
   dibujarMisilesDefensa();
   dibujarChicas();
+  dibujarIndicadorEliminar();
+  dibujarIndicadorRecolocar();
   dibujarZombis();
   dibujarMisilesActivos();
   dibujarProyectiles();
   dibujarParticulas();
-  if (ESTADO.chicaSeleccionada) dibujarGuiaColocacion();
+  if (ESTADO.chicaSeleccionada) {
+    dibujarGuiaColocacion();
+    dibujarFantasmaColocacion();
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -136,9 +141,13 @@ function dibujarMisilesActivos() {
 // ──────────────────────────────────────────────
 function dibujarChicas() {
   ESTADO.chicas.forEach(g => {
+    const levantada = ESTADO.herramientaActiva === 'recolocar' && ESTADO.chicaRecolocando === g;
     const x  = celdaX(g.col), y = celdaY(g.fila);
     const cx = centroX(g.col), cy = centroY(g.fila);
     const cw = ESTADO.anchoCelda, ch = ESTADO.altoCelda;
+
+    ctx.save();
+    if (levantada) ctx.globalAlpha = 0.28;
 
     // sombra
     ctx.beginPath();
@@ -159,6 +168,7 @@ function dibujarChicas() {
 
     // barra de vida
     dibujarBarraVida(x + 2, y + ch - 9, cw - 4, 6, g.vida / g.vidaMax);
+    ctx.restore();
   });
 }
 
@@ -292,4 +302,191 @@ function dibujarGuiaColocacion() {
       }
     }
   }
+}
+
+function dibujarFantasmaColocacion() {
+  const previa = ESTADO.celdaPreviaColocacion;
+  if (!previa) return;
+
+  const def = DEF_CHICAS.find(d => d.id === ESTADO.chicaSeleccionada);
+  if (!def) return;
+
+  const dentroTablero = previa.col >= 1 && previa.col < COLUMNAS && previa.fila >= 0 && previa.fila < FILAS;
+  if (!dentroTablero) return;
+
+  const x = celdaX(previa.col);
+  const y = celdaY(previa.fila);
+  const cx = centroX(previa.col);
+  const cy = centroY(previa.fila);
+  const color = previa.valida ? '#39e87a' : '#ff3355';
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 2, y + 2, ESTADO.anchoCelda - 4, ESTADO.altoCelda - 4);
+  ctx.globalAlpha = 0.95;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2, ESTADO.anchoCelda * 0.05);
+  ctx.setLineDash([ESTADO.anchoCelda * 0.16, ESTADO.anchoCelda * 0.08]);
+  ctx.strokeRect(x + 3, y + 3, ESTADO.anchoCelda - 6, ESTADO.altoCelda - 6);
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, ESTADO.anchoCelda * 0.36, 0, Math.PI * 2);
+  ctx.fillStyle = color + '33';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.56;
+  dibujarVisualChica({ def, animacion: 'idle' }, cx, cy, ESTADO.anchoCelda, ESTADO.altoCelda);
+
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = color;
+  ctx.font = `bold ${Math.max(11, ESTADO.anchoCelda * 0.2)}px ${getComputedStyle(document.documentElement).getPropertyValue('--font-body')}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(previa.valida ? 'OK' : 'NO', cx, y + ESTADO.altoCelda * 0.15);
+  ctx.restore();
+}
+
+function dibujarIndicadorEliminar() {
+  const previa = ESTADO.celdaPreviaHerramienta;
+  if (!previa || ESTADO.herramientaActiva !== 'quitar' || !previa.tieneUnidad) return;
+
+  const chica = obtenerChicaEnCelda(previa.col, previa.fila);
+  if (!chica) return;
+
+  const x = celdaX(chica.col);
+  const y = celdaY(chica.fila);
+  const cx = centroX(chica.col);
+  const cy = centroY(chica.fila);
+  const w = ESTADO.anchoCelda;
+  const h = ESTADO.altoCelda;
+
+  ctx.save();
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = '#ff3355';
+  ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#ff3355';
+  ctx.lineWidth = Math.max(3, w * 0.07);
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(4, w * 0.1);
+  ctx.strokeStyle = 'rgba(5,7,13,0.78)';
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.24, cy - h * 0.24);
+  ctx.lineTo(cx + w * 0.24, cy + h * 0.24);
+  ctx.moveTo(cx + w * 0.24, cy - h * 0.24);
+  ctx.lineTo(cx - w * 0.24, cy + h * 0.24);
+  ctx.stroke();
+
+  ctx.lineWidth = Math.max(2, w * 0.055);
+  ctx.strokeStyle = '#ffebee';
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.24, cy - h * 0.24);
+  ctx.lineTo(cx + w * 0.24, cy + h * 0.24);
+  ctx.moveTo(cx + w * 0.24, cy - h * 0.24);
+  ctx.lineTo(cx - w * 0.24, cy + h * 0.24);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarIndicadorRecolocar() {
+  const previa = ESTADO.celdaPreviaHerramienta;
+  if (ESTADO.herramientaActiva !== 'recolocar') return;
+
+  if (!ESTADO.chicaRecolocando) {
+    if (!previa) return;
+    if (previa.accion !== 'recolocar-origen' || !previa.tieneUnidad) return;
+    const chica = obtenerChicaEnCelda(previa.col, previa.fila);
+    if (!chica) return;
+    dibujarResaltadoRecolocar(chica.col, chica.fila, '#ffd000', true);
+    return;
+  }
+
+  dibujarOrigenRecolocar();
+  if (!previa) return;
+  if (previa.accion !== 'recolocar-destino') return;
+
+  const dentroTablero = previa.col >= 1 && previa.col < COLUMNAS && previa.fila >= 0 && previa.fila < FILAS;
+  if (!dentroTablero) return;
+
+  const chica = ESTADO.chicaRecolocando;
+  const x = celdaX(previa.col);
+  const y = celdaY(previa.fila);
+  const cx = centroX(previa.col);
+  const cy = centroY(previa.fila);
+  const w = ESTADO.anchoCelda;
+  const h = ESTADO.altoCelda;
+  const color = previa.valida ? '#39e87a' : '#ff3355';
+
+  ctx.save();
+  ctx.globalAlpha = 0.26;
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+  ctx.globalAlpha = 0.95;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2, w * 0.055);
+  ctx.setLineDash([w * 0.15, w * 0.08]);
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, w * 0.36, 0, Math.PI * 2);
+  ctx.fillStyle = color + '33';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.58;
+  dibujarVisualChica({ def: chica.def, animacion: chica.animacion || 'idle' }, cx, cy, w, h);
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  ctx.font = `bold ${Math.max(13, w * 0.24)}px ${getComputedStyle(document.documentElement).getPropertyValue('--font-body')}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(previa.valida ? '↔' : 'X', cx, y + h * 0.18);
+  ctx.restore();
+}
+
+function dibujarOrigenRecolocar() {
+  const origen = ESTADO.chicaRecolocandoOrigen;
+  if (!origen) return;
+  dibujarResaltadoRecolocar(origen.col, origen.fila, '#ffd000', false);
+}
+
+function dibujarResaltadoRecolocar(col, fila, color, mostrarIcono) {
+  const x = celdaX(col);
+  const y = celdaY(fila);
+  const cx = centroX(col);
+  const cy = centroY(fila);
+  const w = ESTADO.anchoCelda;
+  const h = ESTADO.altoCelda;
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(3, w * 0.07);
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+  if (mostrarIcono) {
+    ctx.fillStyle = '#05070d';
+    ctx.font = `bold ${Math.max(16, w * 0.34)}px ${getComputedStyle(document.documentElement).getPropertyValue('--font-body')}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('↔', cx + 1, cy + 1);
+    ctx.fillStyle = '#ffd000';
+    ctx.fillText('↔', cx, cy);
+  }
+  ctx.restore();
 }

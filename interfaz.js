@@ -38,6 +38,15 @@ function actualizarHUD() {
 function actualizarHerramientas() {
   btnHerramientaRecolocar.classList.toggle('active', ESTADO.herramientaActiva === 'recolocar');
   btnHerramientaQuitar.classList.toggle('active', ESTADO.herramientaActiva === 'quitar');
+  lienzo.classList.toggle('cursor-quitar', ESTADO.herramientaActiva === 'quitar');
+  lienzo.classList.toggle(
+    'cursor-recolocar',
+    ESTADO.herramientaActiva === 'recolocar' && !ESTADO.chicaRecolocando
+  );
+  lienzo.classList.toggle(
+    'cursor-reubicando',
+    ESTADO.herramientaActiva === 'recolocar' && Boolean(ESTADO.chicaRecolocando)
+  );
 }
 
 // ──────────────────────────────────────────────
@@ -113,7 +122,10 @@ function seleccionarChica(id) {
   }
   ESTADO.herramientaActiva = null;
   ESTADO.chicaRecolocando = null;
+  ESTADO.chicaRecolocandoOrigen = null;
   ESTADO.chicaSeleccionada = (ESTADO.chicaSeleccionada === id) ? null : id;
+  if (!ESTADO.chicaSeleccionada) ESTADO.celdaPreviaColocacion = null;
+  ESTADO.celdaPreviaHerramienta = null;
   pistaTienda.textContent = ESTADO.chicaSeleccionada
     ? `Coloca: ${def.emoji} ${def.nombre}`
     : 'Selecciona una chica';
@@ -126,6 +138,9 @@ function seleccionarHerramienta(herramienta) {
   ESTADO.herramientaActiva = repetir ? null : herramienta;
   ESTADO.chicaSeleccionada = null;
   ESTADO.chicaRecolocando = null;
+  ESTADO.chicaRecolocandoOrigen = null;
+  ESTADO.celdaPreviaColocacion = null;
+  ESTADO.celdaPreviaHerramienta = null;
   if (!ESTADO.herramientaActiva) {
     pistaTienda.textContent = 'Selecciona una chica';
   } else if (ESTADO.herramientaActiva === 'recolocar') {
